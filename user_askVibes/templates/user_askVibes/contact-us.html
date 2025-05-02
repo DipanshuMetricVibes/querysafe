@@ -1,0 +1,180 @@
+{% extends 'user_askVibes/include/auth-base.html' %}
+{% load static %}
+
+{% block title %}
+  Contact Us - QuerySafe
+{% endblock %}
+
+{% block content %}
+  {% include 'user_askVibes/include/public-header.html' %}
+
+  <!-- Contact Section -->
+  <section class="contact-section py-7">
+    <div class="section-overlay"></div>
+    <div class="container position-relative">
+      <!-- Section Header -->
+      <div class="row justify-content-center text-center mb-5">
+        <div class="col-lg-6">
+          <div class="section-badge mb-3">
+            <div class="badge-pill">
+              <i class="material-symbols-rounded">contact_support</i>
+              <span>Get in Touch</span>
+            </div>
+          </div>
+          <h2 class="mb-3">How Can We Help You?</h2>
+          <p class="text-muted">Have questions about our services? We're here to help and provide you with the best support possible.</p>
+        </div>
+      </div>
+
+      <div class="row g-4">
+        <!-- Contact Form -->
+        <div class="col-lg-7 mb-4 mb-lg-0">
+          <div class="contact-form-card">
+            <form method="POST" class="needs-validation" novalidate>
+              {% csrf_token %}
+              <div class="row g-4">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <div class="input-group">
+                      <span class="input-group-text"><i class="material-symbols-rounded">person</i></span>
+                      <input type="text" name="name" class="form-control" placeholder="John Doe" required />
+                      <div class="invalid-feedback">Please provide your name.</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <div class="input-group">
+                      <span class="input-group-text"><i class="material-symbols-rounded">phone</i></span>
+                      <input type="tel" name="phone" class="form-control" placeholder="+91 98765 43210" />
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <div class="input-group">
+                      <span class="input-group-text"><i class="material-symbols-rounded">mail</i></span>
+                      <input type="email" name="email" class="form-control" placeholder="john@example.com" required />
+                      <div class="invalid-feedback">Please provide a valid email address.</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <div class="form-group">
+                    <label class="form-label">Your Message</label>
+                    <div class="input-group">
+                      <span class="input-group-text"><i class="material-symbols-rounded">chat</i></span>
+                      <textarea name="message" class="form-control" rows="5" placeholder="How can we help you?" required></textarea>
+                      <div class="invalid-feedback">Please provide your message.</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-12 mt-4">
+                  <button type="submit" class="btn bg-gradient-primary w-100">
+                    <i class="material-symbols-rounded me-2">send</i>
+                    Send Message
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Contact Info -->
+        <div class="col-lg-5">
+          <div class="contact-info-wrapper">
+            <!-- Quick Contact Card -->
+            <div class="contact-card">
+              <div class="card-header">
+                <div class="card-icon">
+                  <i class="material-symbols-rounded">contact_support</i>
+                </div>
+                <h5>Get in Touch</h5>
+                <p class="text-muted">We're here to help! Reach out to us through any of these channels.</p>
+              </div>
+              
+              <div class="contact-details">
+                <div class="contact-item">
+                  <i class="material-symbols-rounded">language</i>
+                  <div class="contact-info">
+                    <h6>Website</h6>
+                    <a href="https://www.metricvibes.com" target="_blank">www.metricvibes.com</a>
+                  </div>
+                </div>
+                
+                <div class="contact-item">
+                  <i class="material-symbols-rounded">mail</i>
+                  <div class="contact-info">
+                    <h6>Email Us</h6>
+                    <a href="mailto:sales@metricvibes.com">sales@metricvibes.com</a>
+                  </div>
+                </div>
+                
+                <div class="contact-item">
+                  <i class="material-symbols-rounded">location_on</i>
+                  <div class="contact-info">
+                    <h6>Visit Us</h6>
+                    <p>Metric Vibes, Hyde Park Crown,<br>Noida Sector 78, India</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {% include 'user_askVibes/include/public-footer.html' %}
+
+  <!-- Toast Messages -->
+  {% if messages %}
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
+      {% for message in messages %}
+        <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+          <div class="toast-header {% if message.tags %}
+              bg-{{ message.tags }}
+            {% endif %} text-white">
+            <i class="material-symbols-rounded me-2">
+              {% if message.tags == 'success' %}
+                check_circle
+              {% elif message.tags == 'error' %}
+                error
+              {% else %}
+                info
+              {% endif %}
+            </i>
+            <strong class="me-auto">Notification</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+          </div>
+          <div class="toast-body">{{ message }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <script>
+    // Form validation
+    ;(function () {
+      'use strict'
+      var forms = document.querySelectorAll('.needs-validation')
+      Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener(
+          'submit',
+          function (event) {
+            if (!form.checkValidity()) {
+              event.preventDefault()
+              event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+          },
+          false
+        )
+      })
+    })()
+  </script>
+{% endblock %}

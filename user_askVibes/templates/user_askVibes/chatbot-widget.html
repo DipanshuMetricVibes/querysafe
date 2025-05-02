@@ -1,0 +1,389 @@
+<div id="mv-chatbot-widget-root">
+  <div id="mv-chatbot-fab" onclick="mvToggleChatbotWidget()">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="#fff">
+      <circle cx="12" cy="12" r="12" fill="#4b1a86"/>
+      <path d="M7 17v-2a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v2" stroke="#fff" stroke-width="2" fill="none"/>
+      <circle cx="9" cy="10" r="1" fill="#fff"/>
+      <circle cx="15" cy="10" r="1" fill="#fff"/>
+    </svg>
+  </div>
+  <div id="mv-chatbot-modal" style="display:none;">
+    <div id="mv-chatbot-header">
+      <div class="header-left">
+        <div class="logo-icon">
+          {% if chatbot_logo %}
+            <img src="{{ chatbot_logo }}" alt="{{ chatbot_name }}" width="32" height="32">
+          {% else %}
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <circle cx="16" cy="16" r="16" fill="#4b1a86"/>
+              <text x="16" y="21" text-anchor="middle" font-size="16" fill="#fff" font-family="Segoe UI, Arial" font-weight="bold">{{ chatbot_name|slice:":2" }}</text>
+            </svg>
+          {% endif %}
+        </div>
+        <div class="header-title">
+          <div class="main-title">{{ chatbot_name }}</div>
+          <div class="sub-title">AI Powered Support Agent</div>
+        </div>
+      </div>
+      <button id="mv-chatbot-close" onclick="mvCloseChatbotWidget()" title="Close">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="12" fill="#f4f4f4"/>
+          <path d="M8 8l8 8M16 8l-8 8" stroke="#191919" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div id="mv-chatbot-messages"></div>
+    <div id="mv-chatbot-input-bar">
+      <textarea id="mv-chatbot-user-input" placeholder="Type your message..." rows="2"></textarea>
+      <button id="mv-chatbot-send-btn" onclick="mvSendMessage()" title="Send">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M2 21l21-9-21-9v7l15 2-15 2z" fill="#fff"/></svg>
+      </button>
+    </div>
+    <div class="devlop-credit">Made with ❤ by Metric Vibes</div>
+  </div>
+</div>
+<style>
+.devlop-credit{
+    font-size: 10px;
+    text-align: center;
+    padding-bottom: 2px;
+}
+#mv-chatbot-widget-root {
+  z-index: 99999;
+}
+#mv-chatbot-fab {
+  position: fixed;
+  right: 32px;
+  bottom: 32px;
+  background: #290a4e;
+  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+  z-index: 99999;
+}
+#mv-chatbot-fab:hover {
+  box-shadow: 0 8px 24px rgba(0,123,255,0.18);
+  background:rgb(59, 13, 116);
+}
+#mv-chatbot-modal {
+  position: fixed;
+  right: 32px;
+  bottom: 100px;
+  width: 370px;
+  max-width: 95vw;
+  height: 620px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  display: flex;
+  flex-direction: column;
+  z-index: 99999;
+  overflow: hidden;
+  animation: mv-chatbot-fadein 0.2s;
+  border: 1px solid rgb(196, 196, 196);
+}
+@keyframes mv-chatbot-fadein { from { opacity: 0; transform: translateY(40px);} to { opacity: 1; transform: translateY(0);} }
+#mv-chatbot-header {
+  background: #eaeaea;
+  color: #1c1c1c;
+  padding: 12px 18px 12px 14px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e0e0e0;
+  min-height: 60px;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.logo-icon {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0,123,255,0.07);
+}
+.header-title {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.main-title {
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 2px;
+  letter-spacing: 0.2px;
+}
+.sub-title {
+  font-size: 0.93rem;
+  color: #555;
+  font-weight: 300;
+  letter-spacing: 0.1px;
+}
+#mv-chatbot-close {
+  background: none;
+  border: none;
+  padding: 4px;
+  margin-left: 8px;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background 0.18s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#mv-chatbot-close:hover {
+  background: #e0eaff;
+}
+#mv-chatbot-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 10px 10px 10px;
+  background: #f4f4f4;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: thin;
+  scrollbar-color: #cecece #e0e0e000;
+}
+#mv-chatbot-messages::-webkit-scrollbar {
+  width: 8px;
+  border-radius: 8px;
+  background: #e0e0e0;
+}
+#mv-chatbot-messages::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #007bff 40%, #0056b3 100%);
+  border-radius: 8px;
+}
+.mv-chatbot-message {
+  margin-bottom: 15px;
+  max-width: 75%;
+  padding: 12px 16px;
+  border-radius: 16px;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  font-size: 1rem;
+  padding-bottom: 0px;
+}
+.mv-chatbot-message p{
+    margin: 0px;
+}
+.mv-chatbot-user-msg {
+  background-color: #1c1c1c;
+  color: white;
+  align-self: flex-end;
+  border-bottom-right-radius: 0;
+  text-align: right;
+}
+.mv-chatbot-bot-msg {
+  background-color: #cbcbcb;
+  align-self: flex-start;
+  border-bottom-left-radius: 0;
+}
+.mv-chatbot-source-msg {
+  font-size: 0.8em;
+  color: #666;
+  margin-top: 6px;
+}
+#mv-chatbot-input-bar {
+  display: flex;
+  background-color: white;
+  border-top: 1px solid #d3d3d3;
+  flex-direction: row;
+  border-radius: 0 0 18px 18px;
+  align-items: center;
+  padding: 10px;
+  gap: 8px;
+}
+#mv-chatbot-user-input {
+  flex: 1;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: none;
+  font-size: 1rem;
+  min-height: 44px;
+  max-height: 120px;
+  resize: vertical;
+  background: #ffffff00;
+  {% comment %} box-shadow: 0 2px 8px rgba(0, 123, 255, 0.04); {% endcomment %}
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+  font-family: Arial, Helvetica, sans-serif;
+}
+#mv-chatbot-send-btn {
+  background-color: #2a2a2a;
+  color: white;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#mv-chatbot-send-btn:hover {
+  background-color: #0056b3;
+}
+.mv-typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-style: italic;
+  font-size: 0.98em;
+  color:#393939;
+  padding: 8px 12px;
+  background:rgb(255, 255, 255);
+  border-radius: 12px;
+  margin: 8px 0;
+  width: fit-content;
+}
+.mv-typing-indicator .dot {
+  height: 8px;
+  width: 8px;
+  margin: 0 2px;
+  background-color:rgb(103, 103, 103);
+  border-radius: 50%;
+  display: inline-block;
+  animation: bounce 1.2s infinite both;
+}
+.mv-typing-indicator .dot:nth-child(1) { animation-delay: 0s; }
+.mv-typing-indicator .dot:nth-child(2) { animation-delay: 0.2s; }
+.mv-typing-indicator .dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce {
+  0%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-8px); }
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+let mvChatHistory = [];
+let mvChatbotOpen = false;
+let mvGreetingShown = false;
+let currentConversationId = null;
+
+function mvOpenChatbotWidget() {
+  document.getElementById('mv-chatbot-modal').style.display = 'flex';
+  mvChatbotOpen = true;
+  if (!mvGreetingShown) {
+    mvDisplayMessage('Hi how can I help u ?', false);
+    mvGreetingShown = true;
+  }
+}
+function mvCloseChatbotWidget() {
+  document.getElementById('mv-chatbot-modal').style.display = 'none';
+  // FAB remains visible
+  mvChatbotOpen = false;
+}
+function mvToggleChatbotWidget() {
+  if (mvChatbotOpen) {
+    mvCloseChatbotWidget();
+  } else {
+    mvOpenChatbotWidget();
+  }
+}
+function mvSetInputEnabled(enabled) {
+  const input = document.getElementById('mv-chatbot-user-input');
+  const btn = document.getElementById('mv-chatbot-send-btn');
+  input.disabled = !enabled;
+  btn.disabled = !enabled;
+}
+function mvDisplayMessage(text, isUser = false, isSource = false) {
+  const chat = document.getElementById('mv-chatbot-messages');
+  const message = document.createElement('div');
+  if (isSource) {
+    message.classList.add('mv-chatbot-source-msg');
+    message.innerHTML = marked.parse(text);
+  } else {
+    message.classList.add('mv-chatbot-message');
+    message.classList.add(isUser ? 'mv-chatbot-user-msg' : 'mv-chatbot-bot-msg');
+    message.innerHTML = marked.parse(text);
+  }
+  chat.appendChild(message);
+  chat.scrollTop = chat.scrollHeight;
+}
+function mvShowTypingIndicator() {
+  const chat = document.getElementById('mv-chatbot-messages');
+  const typing = document.createElement('div');
+  typing.id = 'mv-typing-indicator';
+  typing.classList.add('mv-typing-indicator');
+  typing.innerHTML = `
+    <span class="dot"></span>
+    <span class="dot"></span>
+    <span class="dot"></span>
+    <span style="margin-left:8px;">Agent is typing...</span>
+  `;
+  chat.appendChild(typing);
+  chat.scrollTop = chat.scrollHeight;
+}
+function mvRemoveTypingIndicator() {
+  const typing = document.getElementById('mv-typing-indicator');
+  if (typing) typing.remove();
+}
+function mvSendMessage() {
+  const input = document.getElementById('mv-chatbot-user-input');
+  const query = input.value.trim();
+  if (!query) return;
+  
+  mvDisplayMessage(query, true);
+  input.value = '';
+  mvShowTypingIndicator();
+  mvSetInputEnabled(false);
+  
+  fetch('/chat/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ 
+      query: query,
+      chatbot_id: '{{ chatbot_id }}',
+      conversation_id: currentConversationId
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.error) {
+      throw new Error(data.error);
+    }
+    
+    // Update conversation ID if received
+    if (data.conversation_id) {
+      currentConversationId = data.conversation_id;
+      console.log('Conversation ID:', currentConversationId);
+    }
+    
+    mvRemoveTypingIndicator();
+    mvDisplayMessage(data.answer, false);
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    mvRemoveTypingIndicator();
+    mvDisplayMessage('Sorry, something went wrong. Please try again.', false);
+  })
+  .finally(() => {
+    mvSetInputEnabled(true);
+  });
+}
+document.getElementById('mv-chatbot-user-input').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    mvSendMessage();
+  }
+});
+</script>
