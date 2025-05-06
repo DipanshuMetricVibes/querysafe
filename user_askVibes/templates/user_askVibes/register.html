@@ -32,19 +32,9 @@ Register {{ block.super }}
                     <div class="input-group input-group-outline mb-3">{{ form.email }}</div>
                     <div class="input-group input-group-outline mb-3">
                       {{ form.password }}
-                      {% if form.password.errors %}
-                      <div class="error-feedback text-danger small">
-                        {{ form.password.errors|join:", " }}
-                      </div>
-                      {% endif %}
                     </div>
                     <div class="input-group input-group-outline mb-3">
                       {{ form.confirm_password }}
-                      {% if form.confirm_password.errors %}
-                      <div class="error-feedback text-danger small">
-                        {{ form.confirm_password.errors|join:", " }}
-                      </div>
-                      {% endif %}
                     </div>
                     <div class="form-check form-check-info text-start ps-0">
                       <input class="form-check-input form-input-custom-checkbox" type="checkbox" value="" id="flexCheckDefault" checked="" />
@@ -159,5 +149,20 @@ Register {{ block.super }}
     .input-group-outline.has-error .form-control {
         border-color: #fd5c70;
     }
+
+    .input-group.has-error .form-control {
+        border-color: #fd5c70 !important;
+        box-shadow: 0 0 0 0.2rem rgba(253, 92, 112, 0.25);
+    }
+
+    .error-feedback {
+        position: absolute;
+        bottom: -20px;
+        left: 0;
+        font-size: 0.75rem;
+        color: #fd5c70;
+        margin-top: 0.25rem;
+    }
+
   </style>
 {% endblock %}

@@ -20,6 +20,7 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('verify-otp/', views.verify_otp_view, name='verify_otp'),
     path('resend-otp/', views.resend_otp_view, name='resend_otp'),
+    path('verify-activation/', views.verify_activation_view, name='verify_activation'),
 
     # conversations related paths
     path('conversations/', views.conversations_view, name='conversations'),

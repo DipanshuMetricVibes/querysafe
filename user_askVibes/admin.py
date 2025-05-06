@@ -1,39 +1,115 @@
 from django.contrib import admin
-from .models import User, Chatbot, ChatbotDocument, Conversation, Message, Contact
+from django.utils.html import format_html
+from .models import User, Chatbot, ChatbotDocument, Conversation, Message, Contact, ActivationCode
+
+@admin.register(ActivationCode)
+class ActivationCodeAdmin(admin.ModelAdmin):
+    list_display = ('code', 'times_used', 'usage_count', 'is_valid', 'created_at')
+    list_filter = ('created_at', 'times_used')
+    search_fields = ('code',)
+    readonly_fields = ('times_used', 'created_at')
+    ordering = ('-created_at',)
+
+    def usage_count(self, obj):
+        return f"{obj.times_used}/10"
+    usage_count.short_description = 'Usage Count'
+
+    def is_valid(self, obj):
+        return obj.times_used < 10
+    is_valid.boolean = True
+    is_valid.short_description = 'Is Valid'
+
+    def has_change_permission(self, request, obj=None):
+        # Prevent editing of fully used activation codes
+        if obj and obj.times_used >= 10:
+            return False
+        return True
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('user_id', 'name', 'email', 'created_at')
-    search_fields = ('user_id', 'name', 'email')
-    readonly_fields = ('user_id', 'created_at')
+    list_display = ('user_id', 'name', 'email', 'registration_status', 'is_active', 'created_at')
+    list_filter = ('is_active', 'registration_status', 'created_at')
+    search_fields = ('name', 'email', 'user_id')
+    readonly_fields = ('user_id', 'created_at', 'otp_verified_at', 'activated_at')
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('user_id', 'name', 'email', 'password')
+        }),
+        ('Status Information', {
+            'fields': ('is_active', 'registration_status')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'otp_verified_at', 'activated_at')
+        }),
+    )
 
 @admin.register(Chatbot)
 class ChatbotAdmin(admin.ModelAdmin):
-    list_display = ('chatbot_id', 'user', 'name', 'status', 'dataset_name', 'created_at')
+    list_display = ('chatbot_id', 'user', 'name', 'status_badge', 'dataset_name', 'created_at')
+    list_filter = ('status', 'created_at')
     search_fields = ('chatbot_id', 'name', 'description', 'dataset_name')
-    list_filter = ('user', 'status')
+    readonly_fields = ('chatbot_id', 'created_at')
+
+    def status_badge(self, obj):
+        colors = {
+            'training': 'warning',
+            'active': 'success',
+            'inactive': 'danger',
+            'failed': 'danger'
+        }
+        color = colors.get(obj.status, 'secondary')
+        return format_html(
+            '<span class="badge badge-{}">{}</span>',
+            color,
+            obj.status.title()
+        )
+    status_badge.short_description = 'Status'
 
 @admin.register(ChatbotDocument)
 class ChatbotDocumentAdmin(admin.ModelAdmin):
-    list_display = ('chatbot', 'document', 'uploaded_at')
-    search_fields = ('chatbot__name', 'document')  # Search by chatbot name and document
-    list_filter = ('chatbot',)
+    list_display = ('id', 'chatbot', 'document_name', 'uploaded_at')
+    list_filter = ('uploaded_at', 'chatbot')
+    search_fields = ('chatbot__name', 'document')
+    readonly_fields = ('uploaded_at',)
+
+    def document_name(self, obj):
+        return obj.document.name.split('/')[-1]
+    document_name.short_description = 'Document'
 
 @admin.register(Conversation)
 class ConversationAdmin(admin.ModelAdmin):
-    list_display = ('chatbot', 'user_id', 'started_at', 'last_updated')
+    list_display = ('id', 'chatbot', 'user_id', 'message_count', 'started_at', 'last_updated')
+    list_filter = ('started_at', 'last_updated')
     search_fields = ('chatbot__name', 'user_id')
-    list_filter = ('chatbot',)
+    readonly_fields = ('started_at', 'last_updated')
+
+    def message_count(self, obj):
+        return obj.message_set.count()
+    message_count.short_description = 'Messages'
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('conversation', 'content', 'is_bot', 'timestamp')
-    search_fields = ('conversation__chatbot__name', 'content')  # Search by chatbot name and content
-    list_filter = ('conversation', 'is_bot')
+    list_display = ('id', 'conversation', 'short_content', 'is_bot', 'timestamp')
+    list_filter = ('is_bot', 'timestamp', 'conversation__chatbot')
+    search_fields = ('content', 'conversation__chatbot__name')
+    readonly_fields = ('timestamp',)
 
+    def short_content(self, obj):
+        return obj.content[:50] + '...' if len(obj.content) > 50 else obj.content
+    short_content.short_description = 'Content'
+
+@admin.register(Contact)
 class ContactAdmin(admin.ModelAdmin):
-    list_display = ('name', 'email', 'phone', 'interest', 'is_responded', 'created_at')  # Include 'interest' and 'is_responded'
-    list_filter = ('interest', 'is_responded', 'created_at')  # Include 'interest' and 'is_responded'
+    list_display = ('name', 'email', 'phone', 'interest', 'short_message', 'is_responded', 'created_at')
+    list_filter = ('interest', 'is_responded', 'created_at')
     search_fields = ('name', 'email', 'phone', 'message')
+    readonly_fields = ('created_at',)
 
-admin.site.register(Contact, ContactAdmin)
+    def short_message(self, obj):
+        return obj.message[:50] + '...' if len(obj.message) > 50 else obj.message
+    short_message.short_description = 'Message'
+
+# Add custom admin site title and header
+admin.site.site_header = 'QuerySafe Administration'
+admin.site.site_title = 'QuerySafe Admin Portal'
+admin.site.index_title = 'Welcome to QuerySafe Admin Portal'

@@ -5,17 +5,29 @@ import os
 from django.conf import settings
 # from django.core.files.storage import default_storage
 from django.utils.text import get_valid_filename
-import threading
-import fitz  # PyMuPDF
 from user_askVibes.vectorization.pipeline_processor import run_pipeline_background
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
 class User(models.Model):
+    STATUS_CHOICES = (
+        ('registered', 'Registered'),
+        ('otp_verified', 'OTP Verified'),
+        ('activated', 'Activated')
+    )
+
     user_id = models.CharField(max_length=8, unique=True)
     name = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=100)
+    is_active = models.BooleanField(default=False)
+    registration_status = models.CharField(
+        max_length=20, 
+        choices=STATUS_CHOICES,
+        default='registered'
+    )
+    otp_verified_at = models.DateTimeField(null=True, blank=True)
+    activated_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
@@ -27,6 +39,28 @@ class User(models.Model):
 
     def __str__(self):
         return self.name
+
+class ActivationCode(models.Model):
+    code = models.CharField(max_length=8, unique=True)  # Changed to 8 for alphanumeric
+    times_used = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.code} (Used: {self.times_used}/10)"
+
+    @property
+    def is_used(self):
+        return self.times_used >= 10
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            # Generate random 8-character alphanumeric code in uppercase
+            while True:
+                new_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+                if not ActivationCode.objects.filter(code=new_code).exists():
+                    self.code = new_code
+                    break
+        super().save(*args, **kwargs)
 
 class EmailOTP(models.Model):
     email = models.EmailField()

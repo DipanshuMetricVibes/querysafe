@@ -100,6 +100,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const timerSpan = document.getElementById('timer');
     let timeLeft = 30;
     let timerId = null;
+    let isResending = false; // Add flag to prevent duplicate requests
 
     function updateTimer() {
         if (timeLeft > 0) {
@@ -117,36 +118,37 @@ document.addEventListener('DOMContentLoaded', function() {
     updateTimer();
     timerId = setInterval(updateTimer, 1000);
 
-    // Handle resend click
+    // Handle resend click with debounce
     resendBtn.addEventListener('click', function(e) {
-        if (!resendBtn.classList.contains('disabled')) {
-            // Reset timer
-            timeLeft = 30;
-            updateTimer();
-            timerId = setInterval(updateTimer, 1000);
+        e.preventDefault(); // Prevent any default action
+        
+        if (!resendBtn.classList.contains('disabled') && !isResending) {
+            isResending = true; // Set flag to prevent duplicate requests
             
-            // Send resend OTP request
             fetch('{% url "resend_otp" %}', {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    email: '{{ request.session.registration_data.email }}'
-                })
+                }
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    showToast('success', 'OTP sent successfully! Please check your email.');
+                    // Reset timer
+                    timeLeft = 30;
+                    updateTimer();
+                    timerId = setInterval(updateTimer, 1000);
+                    showToast('success', data.message);
                 } else {
-                    showToast('error', data.message || 'Failed to send OTP. Please try again.');
+                    showToast('error', data.message);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
                 showToast('error', 'Failed to send OTP. Please try again.');
+            })
+            .finally(() => {
+                isResending = false; // Reset flag after request completes
             });
         }
     });

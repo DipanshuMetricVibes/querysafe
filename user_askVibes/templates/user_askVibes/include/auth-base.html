@@ -50,15 +50,15 @@
         <div class="toast-body" id="successToastMessage"></div>
       </div>
 
-      <div class="toast fade hide p-2 mt-2 bg-gradient-danger" role="alert" aria-live="assertive" id="errorToast" aria-atomic="true">
-        <div class="toast-header bg-transparent border-0">
+      <div class="toast fade hide p-2 mt-2 bg-danger" role="alert" aria-live="assertive" id="errorToast" aria-atomic="true">
+        <div class="toast-header border-0">
           <i class="material-symbols-rounded text-white me-2">error</i>
           <span class="me-auto text-white font-weight-bold">Error</span>
           <small class="text-white">Just now</small>
-          <i class="fas fa-times text-md text-white ms-3 cursor-pointer" data-bs-dismiss="toast" aria-label="Close"></i>
+          <i class="fas fa-times text-white ms-3 cursor-pointer" data-bs-dismiss="toast" aria-label="Close"></i>
         </div>
         <hr class="horizontal light m-0">
-        <div class="toast-body text-white" id="errorToastMessage"></div>
+        <div class="toast-body text-white" id="errorToastMessage" style="background: rgba(0,0,0,0.1);"></div>
       </div>
     </div>
 
@@ -121,6 +121,26 @@
 
       .end-1 {
         right: 1rem;
+      }
+
+      /* Error Toast Styling */
+      .toast.bg-danger {
+        background: #f44335 !important;
+      }
+
+      .toast.bg-danger .toast-body {
+        color: #fff !important;
+        font-weight: 500;
+        text-shadow: 0 1px 1px rgba(0,0,0,0.1);
+      }
+
+      .toast.bg-danger .toast-header {
+        color: #fff;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+      }
+
+      .toast.bg-danger .horizontal.light {
+        background-color: rgba(255,255,255,0.1);
       }
     </style>
 

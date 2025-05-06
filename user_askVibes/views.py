@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from .forms import RegisterForm, LoginForm, ChatbotCreateForm, OTPVerificationForm
-from .models import Activity, Contact, User, Chatbot, ChatbotDocument, Conversation, Message, EmailOTP
+from .models import ActivationCode, Activity, Contact, User, Chatbot, ChatbotDocument, Conversation, Message, EmailOTP
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import JsonResponse
 import json
@@ -22,6 +22,9 @@ from django.core.mail import send_mail
 import random
 from django.urls import reverse
 from django.template.loader import render_to_string
+from .decorators import redirect_authenticated_user, login_required
+from django.views.decorators.http import require_http_methods
+from django.core.cache import cache
 
 # Initialize models and clients
 embedding_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
@@ -42,7 +45,7 @@ def send_otp_email(email, otp):
         
         # Create plain text content
         plain_message = f'Your OTP for email verification is: {otp}\nValid for 10 minutes.'
-        
+            
         # Send email
         send_mail(
             subject=subject,
@@ -57,95 +60,162 @@ def send_otp_email(email, otp):
         print(f"Error sending email: {str(e)}")
         return False
 
+@redirect_authenticated_user
 def register_view(request):
     if request.method == 'POST':
         form = RegisterForm(request.POST)
+        email = request.POST.get('email')
+
+        # Check if user exists and registration is incomplete
+        try:
+            existing_user = User.objects.get(email=email)
+            
+            # Store user_id in session
+            request.session['pending_activation_user_id'] = existing_user.user_id
+
+            # Redirect based on registration status
+            if existing_user.registration_status == 'registered':
+                messages.info(request, 'Please complete your email verification.')
+                return redirect('verify_otp')
+            elif existing_user.registration_status == 'otp_verified':
+                messages.info(request, 'Please complete your account activation.')
+                return redirect('verify_activation')
+            elif not existing_user.is_active:
+                messages.info(request, 'Please activate your account.')
+                return redirect('verify_activation')
+            else:
+                messages.error(request, 'Email already registered! Please login.')
+                return redirect('login')
+        except User.DoesNotExist:
+            # Continue with new registration
+            pass
+
+        password = request.POST.get('password')
+        confirm_password = request.POST.get('confirm_password')
+        
+        if password != confirm_password:
+            messages.error(request, 'Passwords do not match!')
+            return render(request, 'user_askVibes/register.html', {'form': form})
+            
         if form.is_valid():
             name = form.cleaned_data['name']
             email = form.cleaned_data['email']
             password = form.cleaned_data['password']
-            confirm_password = form.cleaned_data['confirm_password']
-
-            # Check if passwords match
-            if password != confirm_password:
-                messages.error(request, 'Passwords do not match!')
-                return render(request, 'user_askVibes/register.html', {'form': form})
 
             # Check if email already exists
             if User.objects.filter(email=email).exists():
                 messages.error(request, 'Email already registered!')    
                 return render(request, 'user_askVibes/register.html', {'form': form})
 
+            # Create user with initial status
+            user = User.objects.create(
+                name=name,
+                email=email,
+                password=password,
+                is_active=False,
+                registration_status='registered'
+            )
+
             # Generate and send OTP
             otp = generate_otp()
-            EmailOTP.objects.filter(email=email).delete()  # Delete any existing OTP
+            EmailOTP.objects.filter(email=email).delete()
             EmailOTP.objects.create(email=email, otp=otp)
             send_otp_email(email, otp)
 
-            # Store registration data in session
-            request.session['registration_data'] = {
-                'name': name,
-                'email': email,
-                'password': password
-            }
+            # Store user_id in session
+            request.session['pending_activation_user_id'] = user.user_id
 
             messages.success(request, 'Please check your email for the OTP verification code.')
             return redirect('verify_otp')
-        else:
-            messages.error(request, "Please correct the errors below.")
     else:
         form = RegisterForm()
     return render(request, 'user_askVibes/register.html', {'form': form})
 
+@redirect_authenticated_user
 def verify_otp_view(request):
-    if 'registration_data' not in request.session:
+    if 'pending_activation_user_id' not in request.session:
+        return redirect('register')
+
+    try:
+        user = User.objects.get(user_id=request.session['pending_activation_user_id'])
+    except User.DoesNotExist:
         return redirect('register')
 
     if request.method == 'POST':
         form = OTPVerificationForm(request.POST)
         if form.is_valid():
             entered_otp = form.cleaned_data['otp']
-            email = request.session['registration_data']['email']
 
             try:
-                email_otp = EmailOTP.objects.get(email=email, is_verified=False)
+                email_otp = EmailOTP.objects.get(email=user.email, is_verified=False)
                 if email_otp.is_valid():
                     if email_otp.otp == entered_otp:
-                        # Create user
-                        user = User.objects.create(
-                            name=request.session['registration_data']['name'],
-                            email=email,
-                            password=request.session['registration_data']['password']
-                        )
+                        # Update user status
+                        user.registration_status = 'otp_verified'
+                        user.otp_verified_at = timezone.now()
+                        user.save()
                         
                         # Mark OTP as verified
                         email_otp.is_verified = True
                         email_otp.save()
-
-                        # Log the user in
-                        request.session['user_id'] = user.user_id
                         
-                        # Clear registration data
-                        del request.session['registration_data']
-                        
-                        messages.success(request, 'Email verified successfully! Thank you for choosing us.')
-                        return redirect('dashboard')
+                        messages.success(request, 'Email verified successfully! Please activate your account.')
+                        return redirect('verify_activation')
                     else:
                         messages.error(request, 'Invalid OTP. Please try again.')
                 else:
-                    messages.error(request, 'OTP has expired. Please register again.')
-                    return redirect('register')
+                    messages.error(request, 'OTP has expired. Please request a new one.')
             except EmailOTP.DoesNotExist:
-                messages.error(request, 'Invalid OTP request.')
-                return redirect('register')
+                messages.error(request, 'No valid OTP found. Please request a new one.')
     else:
         form = OTPVerificationForm()
     
-    return render(request, 'user_askVibes/verify_otp.html', {'form': form})
+    return render(request, 'user_askVibes/verify_otp.html', {'form': form, 'user': user})
+
+@redirect_authenticated_user
+def verify_activation_view(request):
+    if 'pending_activation_user_id' not in request.session:
+        return redirect('login')
+
+    if request.method == 'POST':
+        activation_code = request.POST.get('activation_code')
+        try:
+            code = ActivationCode.objects.get(code=activation_code)
+            if code.times_used < 10:
+                user = User.objects.get(user_id=request.session['pending_activation_user_id'])
+                
+                # Update user status
+                user.is_active = True
+                user.registration_status = 'activated'
+                user.activated_at = timezone.now()
+                user.save()
+                
+                # Increment usage counter
+                code.times_used += 1
+                code.save()
+                
+                # Set user session
+                request.session['user_id'] = user.user_id
+                
+                # Clear activation session
+                del request.session['pending_activation_user_id']
+                
+                messages.success(request, 'Account activated successfully! Welcome to QuerySafe.')
+                return redirect('dashboard')
+            else:
+                messages.error(request, 'This activation code has reached its usage limit.')
+        except ActivationCode.DoesNotExist:
+            messages.error(request, 'Invalid activation code.')
+        except User.DoesNotExist:
+            messages.error(request, 'User not found.')
+            return redirect('login')
+    
+    return render(request, 'user_askVibes/verify_account_activate.html')
 
 def index_view(request):
     return render(request, 'user_askVibes/index.html')
 
+@redirect_authenticated_user
 def login_view(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
@@ -155,8 +225,22 @@ def login_view(request):
             try:
                 user = User.objects.get(email=email)
                 if user.password == password:
+                    # Check registration status
+                    if user.registration_status == 'registered':
+                        request.session['pending_activation_user_id'] = user.user_id
+                        messages.info(request, 'Please verify your email first.')
+                        return redirect('verify_otp')
+                    elif user.registration_status == 'otp_verified':
+                        request.session['pending_activation_user_id'] = user.user_id
+                        messages.info(request, 'Please activate your account.')
+                        return redirect('verify_activation')
+                    elif not user.is_active:
+                        request.session['pending_activation_user_id'] = user.user_id
+                        messages.info(request, 'Please activate your account.')
+                        return redirect('verify_activation')
+                    
                     request.session['user_id'] = user.user_id
-                    messages.success(request, f'Welcome back, {user.name}!')  # Changed this line
+                    messages.success(request, f'Welcome back, {user.name}!')
                     return redirect('dashboard')
                 else:
                     messages.error(request, 'Invalid password')
@@ -167,10 +251,8 @@ def login_view(request):
     
     return render(request, 'user_askVibes/login.html', {'form': form})
 
+@login_required
 def dashboard_view(request):
-    if 'user_id' not in request.session:
-        return redirect('login')
-    
     user = User.objects.get(user_id=request.session['user_id'])
     
     # Get user's chatbots
@@ -218,9 +300,8 @@ def dashboard_view(request):
     
     return render(request, 'user_askVibes/dashboard.html', context)
 
+@login_required
 def my_chatbots(request):
-    if 'user_id' not in request.session:
-        return redirect('login')
     user = User.objects.get(user_id=request.session['user_id'])
     chatbots = Chatbot.objects.filter(user=user).prefetch_related('conversations')
     return render(request, 'user_askVibes/my_chatbots.html', {'chatbots': chatbots})
@@ -231,14 +312,13 @@ def logout_view(request):
         messages.success(request, 'You have been logged out successfully.')
     return redirect('login')
 
+@login_required
 def create_chatbot(request):
-    if 'user_id' not in request.session:
-        return redirect('login')
+    user = User.objects.get(user_id=request.session['user_id'])
     if request.method == 'POST':
         form = ChatbotCreateForm(request.POST, request.FILES)
         if form.is_valid():
             chatbot = form.save(commit=False)
-            user = User.objects.get(user_id=request.session['user_id'])
             chatbot.user = user
             chatbot.save()
 
@@ -255,10 +335,8 @@ def create_chatbot(request):
         form = ChatbotCreateForm()
     return render(request, 'user_askVibes/create_chatbot.html', {'form': form})
 
+@login_required
 def conversations_view(request, chatbot_id=None, conversation_id=None):
-    if 'user_id' not in request.session:
-        return redirect('login')
-    
     user = User.objects.get(user_id=request.session['user_id'])
     chatbots = Chatbot.objects.filter(user=user)
     
@@ -533,6 +611,7 @@ def chatbot_detail_view(request, pk):
     }
     return render(request, 'user_askVibes/chatbot_detail.html', context)
 
+@login_required
 def profile_view(request):
     user = User.objects.get(user_id=request.session['user_id'])
     
@@ -572,20 +651,41 @@ def update_profile(request):
     messages.success(request, 'Profile updated successfully!')
     return redirect('profile')
 
+@require_http_methods(["POST"])
 @csrf_exempt
 def resend_otp_view(request):
     if request.method == 'POST':
         try:
-            data = json.loads(request.body)
-            email = data.get('email')
+            if 'pending_activation_user_id' not in request.session:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Invalid session. Please register again.'
+                })
+
+            user = User.objects.get(user_id=request.session['pending_activation_user_id'])
+            
+            # Add rate limiting using cache
+            cache_key = f'resend_otp_{user.email}'
+            if cache.get(cache_key):
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Please wait before requesting another OTP.'
+                })
+            
+            # Set cache to prevent duplicate requests
+            cache.set(cache_key, True, 30)  # 30 seconds cooldown
             
             # Generate new OTP
             otp = generate_otp()
-            EmailOTP.objects.filter(email=email).delete()
-            EmailOTP.objects.create(email=email, otp=otp)
+            
+            # Delete any existing OTP
+            EmailOTP.objects.filter(email=user.email).delete()
+            
+            # Create new OTP
+            EmailOTP.objects.create(email=user.email, otp=otp)
             
             # Send OTP email
-            if send_otp_email(email, otp):
+            if send_otp_email(user.email, otp):
                 return JsonResponse({
                     'success': True,
                     'message': 'OTP sent successfully!'
@@ -595,12 +695,17 @@ def resend_otp_view(request):
                     'success': False,
                     'message': 'Failed to send OTP. Please try again.'
                 })
+        except User.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'User not found. Please register again.'
+            })
         except Exception as e:
             return JsonResponse({
                 'success': False,
                 'message': str(e)
             })
-    return JsonResponse({'success': False}, status=405)
+    return JsonResponse({'success': False, 'message': 'Invalid request method.'})
 
 def contact_view(request):
     if request.method == 'POST':
@@ -654,3 +759,4 @@ Message:
         return redirect('contact')
 
     return render(request, 'user_askVibes/contact-us.html')
+
