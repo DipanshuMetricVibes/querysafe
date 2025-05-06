@@ -11,17 +11,17 @@ class ActivationCodeAdmin(admin.ModelAdmin):
     ordering = ('-created_at',)
 
     def usage_count(self, obj):
-        return f"{obj.times_used}/10"
+        return f"{obj.times_used}/5"
     usage_count.short_description = 'Usage Count'
 
     def is_valid(self, obj):
-        return obj.times_used < 10
+        return obj.times_used < 5
     is_valid.boolean = True
     is_valid.short_description = 'Is Valid'
 
     def has_change_permission(self, request, obj=None):
         # Prevent editing of fully used activation codes
-        if obj and obj.times_used >= 10:
+        if obj and obj.times_used >= 5:
             return False
         return True
 

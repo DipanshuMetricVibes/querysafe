@@ -181,7 +181,7 @@ def verify_activation_view(request):
         activation_code = request.POST.get('activation_code')
         try:
             code = ActivationCode.objects.get(code=activation_code)
-            if code.times_used < 10:
+            if code.times_used < 5:
                 user = User.objects.get(user_id=request.session['pending_activation_user_id'])
                 
                 # Update user status
