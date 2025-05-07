@@ -128,12 +128,14 @@ class Chatbot(models.Model):
         return self.name
 
 class ChatbotDocument(models.Model):
-    chatbot = models.ForeignKey(Chatbot, on_delete=models.CASCADE, related_name='documents')
-    document = models.CharField(max_length=255, blank=True, null=True)  # Store the file path as a string
+    chatbot = models.ForeignKey(Chatbot, on_delete=models.CASCADE)
+    document = models.FileField(upload_to='documents/files_uploaded/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.document if self.document else "No document"
+        if hasattr(self.document, 'name'):
+            return str(self.document.name)
+        return "No document"
 
     def save(self, *args, **kwargs):
         is_new = not self.pk and hasattr(self, 'pdf_file')

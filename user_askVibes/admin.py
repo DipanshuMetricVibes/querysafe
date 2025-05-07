@@ -73,7 +73,14 @@ class ChatbotDocumentAdmin(admin.ModelAdmin):
     readonly_fields = ('uploaded_at',)
 
     def document_name(self, obj):
-        return obj.document.name.split('/')[-1]
+        try:
+            if hasattr(obj.document, 'name'):
+                return obj.document.name.split('/')[-1]
+            elif isinstance(obj.document, str):
+                return obj.document.split('/')[-1]
+            return str(obj.document)
+        except Exception:
+            return 'No document'
     document_name.short_description = 'Document'
 
 @admin.register(Conversation)
@@ -84,7 +91,11 @@ class ConversationAdmin(admin.ModelAdmin):
     readonly_fields = ('started_at', 'last_updated')
 
     def message_count(self, obj):
-        return obj.message_set.count()
+        try:
+            # Using the related_name 'messages' from the Message model
+            return obj.messages.count()
+        except Exception:
+            return 0
     message_count.short_description = 'Messages'
 
 @admin.register(Message)
