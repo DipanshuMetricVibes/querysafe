@@ -1,0 +1,293 @@
+{% extends 'user_querySafe/include/base.html' %}
+{% block title %}
+  Chatbot {{ block.super }}
+{% endblock %}
+{% block content %}
+<div class="container-fluid py-2">
+  <div class="row">
+    <div class="col-12">
+      <div class="card my-4">
+        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+          <div class="d-flex justify-content-between align-items-center bg-gradient-primary shadow-dark border-radius-lg pt-4 pb-3 px-3">
+            <h6 class="text-white text-capitalize mb-0">My Chatbots</h6>
+            <a href="{% url 'create_chatbot' %}" class="btn btn-white btn-sm">
+              <i class="material-symbols-rounded align-middle">add_circle</i>
+              Create New Chatbot
+            </a>
+          </div>
+        </div>
+        <div class="card-body px-0 pb-2">
+          <div class="table-responsive p-0">
+            <table class="table align-items-center mb-0">
+              <thead>
+                <tr>
+                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2 text-center">#</th>
+                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Logo</th>
+                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Chatbot Name</th>
+                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Status</th>
+                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Dataset Name</th>
+                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Conversation</th>
+                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Snippet Code</th>
+                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if chatbots and chatbots|length > 0 %}
+                  {% for bot in chatbots %}
+                  <tr id="chatbot-row-{{ bot.chatbot_id }}" data-created-at="{{ bot.created_at.timestamp }}">
+                    <td class="text-center">
+                      <span class="text-xs font-weight-bold">{{ forloop.counter }}</span>
+                    </td>
+                    <td>
+                      <div class="px-2 py-1">
+                        {% if bot.logo %}
+                          <div class="avatar avatar-sm rounded-circle border border-primary">
+                            <img src="{{ bot.logo.url }}" class="avatar-img rounded-circle" alt="logo">
+                          </div>
+                        {% else %}
+                          <div class="avatar avatar-sm rounded-circle bg-gradient-primary border border-primary">
+                            <i class="material-symbols-rounded text-white">smart_toy</i>
+                          </div>
+                        {% endif %}
+                      </div>
+                    </td>
+                    <td>
+                      <div class="d-flex px-2 py-1">
+                        <div class="d-flex flex-column justify-content-center">
+                          <h6 class="mb-0 text-sm">{{ bot.name }}</h6>
+                          <p class="text-xs text-secondary mb-0">{{ bot.description|truncatechars:50 }}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span id="status-{{ bot.chatbot_id }}" 
+                            class="badge badge-sm bg-gradient-{% if bot.status == 'trained' %}success{% elif bot.status == 'training' %}warning{% else %}secondary{% endif %} {% if bot.status == 'training' %}status-badge-training{% endif %}">
+                        {{ bot.status|title }}
+                      </span>
+                    </td>
+                    <td>
+                      <p class="text-xs font-weight-bold mb-0">{{ bot.dataset_name|default:"-" }}</p>
+                    </td>
+                    <td>
+                      <span class="badge badge-sm bg-gradient-info">{{ bot.conversation_count }}</span>
+                    </td>
+                    <td>
+                      <div class="d-flex align-items-center">
+                        <button id="widget-code-{{ bot.chatbot_id }}" 
+                                class="btn btn-outline-primary btn-sm d-flex align-items-center mb-0 {% if bot.status != 'trained' %}disabled opacity-50{% endif %}" 
+                                onclick="{% if bot.status == 'trained' %}copySnippet('{{ bot.chatbot_id }}'){% endif %}" 
+                                title="{% if bot.status == 'trained' %}Click to copy widget code{% else %}Available after training completes{% endif %}"
+                                {% if bot.status != 'trained' %}disabled{% endif %}>
+                            <i class="material-symbols-rounded me-1 copy-icon">content_copy</i>
+                            <span class="text-xs" id="button-text-{{ bot.chatbot_id }}">Widget Code</span>
+                        </button>
+                        <code id="snippet-{{ bot.chatbot_id }}" style="display: none;">
+                          {{ bot.snippet_code }}
+                        </code>
+                      </div>
+                    </td>
+                    <td class="align-middle text-center">
+                      <div class="btn-group" role="group">
+                        <a href="#edit_chatbot" 
+                           class="btn btn-link text-dark px-2 mb-0" 
+                           title="Edit">
+                          <i class="material-symbols-rounded">edit</i>
+                        </a>
+                        <a target="_blank" href="{% if bot.status == 'trained' %}{% url 'chatbot_view' bot.chatbot_id %}{% endif %}" 
+                           class="btn btn-link text-primary px-2 mb-0 {% if bot.status != 'trained' %}disabled opacity-50{% endif %}" 
+                           title="{% if bot.status == 'trained' %}View{% else %}Available after training completes{% endif %}">
+                          <i class="material-symbols-rounded">open_in_new</i>
+                        </a>
+                        <button type="button" 
+                                class="btn btn-link text-{% if bot.status == 'trained' %}danger{% else %}success{% endif %} px-2 mb-0" 
+                                title="{% if bot.status|lower == 'active' %}Disable{% else %}Enable{% endif %}">
+                          <i class="material-symbols-rounded">{% if bot.status|lower == 'active' %}block{% else %}play_circle{% endif %}</i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="8" class="text-center py-5 align-middle">
+                      <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 200px;">
+                        <i class="material-symbols-rounded text-secondary mb-3" style="font-size: 48px;">smart_toy</i>
+                        <h5 class="mt-2 mb-1 text-secondary">No Chatbot Found</h5>
+                        <p class="mb-3 text-muted">
+                          You haven't created any chatbots yet.<br>
+                          Click the button above to create your first chatbot!
+                        </p>
+                        <a href="{% url 'create_chatbot' %}" class="btn btn-primary btn-sm mt-2">
+                          <i class="material-symbols-rounded align-middle">add_circle</i>
+                          Create New Chatbot
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .avatar {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .avatar-img {
+    width: 100%;
+    height: 100%;
+    padding: 5px;
+    object-fit: cover; /* Maintain aspect ratio and fill the container */
+  }
+  .btn-group .btn-link {
+    text-decoration: none;
+  }
+  .badge {
+    font-size: 0.65rem;
+    font-weight: 600;
+  }
+  .cursor-pointer {
+    cursor: pointer;
+  }
+  code:hover {
+    background-color: #f8f9fa;
+  }
+  .btn.btn-sm i{
+    font-size: 0.8rem;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .status-badge-training {
+    position: relative;
+    padding-left: 20px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .status-badge-training::before {
+    content: "";
+    position: absolute;
+    left: 6px;
+    width: 8px;
+    height: 8px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-top: 0;  /* Remove any top margin */
+    transform: none; /* Remove the translateY */
+  }
+
+  .disabled {
+    pointer-events: none;
+    cursor: not-allowed !important;
+  }
+
+  .opacity-50 {
+    opacity: 0.5;
+  }
+</style>
+<script>
+  var pollingInterval = setInterval(function() {
+    fetch("{% url 'chatbot_status' %}")
+      .then(response => response.json())
+      .then(data => {
+        let now = Date.now() / 1000;  // current time in seconds
+        let allExpired = true;
+        data.forEach(function(bot) {
+          var row = document.getElementById("chatbot-row-" + bot.chatbot_id);
+          if(row) {
+            var createdAt = parseFloat(row.getAttribute("data-created-at"));
+            // Only update status if within 2 minutes (120 seconds) of creation
+            if((now - createdAt) < 120) {
+              allExpired = false;
+              var elem = document.getElementById("status-" + bot.chatbot_id);
+              if (elem) {
+                elem.innerHTML = bot.status.charAt(0).toUpperCase() + bot.status.slice(1);
+                var badgeClass;
+                switch(bot.status) {
+                  case 'trained':
+                    badgeClass = 'success';
+                    break;
+                  case 'training':
+                    badgeClass = 'warning';
+                    break;
+                  default:
+                    badgeClass = 'secondary';
+                }
+                
+                // Update both the color class and the animation class
+                elem.className = `badge badge-sm bg-gradient-${badgeClass} ${bot.status === 'training' ? 'status-badge-training' : ''}`;
+                
+                // Update button states
+                const widgetButton = document.getElementById(`widget-code-${bot.chatbot_id}`);
+                const actionButtons = row.querySelectorAll('.btn-group .btn');
+                
+                if (bot.status === 'trained') {
+                  // Enable buttons
+                  widgetButton.classList.remove('disabled', 'opacity-50');
+                  widgetButton.removeAttribute('disabled');
+                  actionButtons.forEach(btn => {
+                    btn.classList.remove('disabled', 'opacity-50');
+                    btn.removeAttribute('disabled');
+                  });
+                } else {
+                  // Disable buttons
+                  widgetButton.classList.add('disabled', 'opacity-50');
+                  widgetButton.setAttribute('disabled', '');
+                  actionButtons.forEach(btn => {
+                    btn.classList.add('disabled', 'opacity-50');
+                    btn.setAttribute('disabled', '');
+                  });
+                }
+              }
+            }
+          }
+        });
+        if (allExpired) {
+          clearInterval(pollingInterval);
+          console.log("Polling stopped; all chatbots are older than 2 minutes.");
+        }
+      })
+      .catch(error => console.error("Error updating chatbot status:", error));
+  }, 5000);
+
+  function copySnippet(chatbotId) {
+    const snippetElement = document.getElementById(`snippet-${chatbotId}`);
+    const buttonElement = snippetElement.previousElementSibling;
+    const buttonTextElement = document.getElementById(`button-text-${chatbotId}`);
+    
+    // Copy the text
+    navigator.clipboard.writeText(snippetElement.textContent.trim())
+      .then(() => {
+        // Change button text and style
+        buttonTextElement.textContent = 'Copied!';
+        buttonElement.classList.add('btn-success');
+        buttonElement.classList.remove('btn-outline-primary');
+        
+        // Reset after 2 seconds
+        setTimeout(() => {
+          buttonTextElement.textContent = 'Widget Code';
+          buttonElement.classList.remove('btn-success');
+          buttonElement.classList.add('btn-outline-primary');
+        }, 2000);
+      })
+      .catch(err => {
+        console.error('Failed to copy text: ', err);
+      });
+  }
+</script>
+{% endblock %}

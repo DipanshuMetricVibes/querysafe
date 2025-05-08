@@ -1,0 +1,174 @@
+{% load static %}
+<!-- Footer -->
+<footer class="footer py-6">
+    <div class="container">
+        <!-- Main Footer Content -->
+        <div class="row g-5 justify-content-between mb-5">
+            <!-- Brand Section -->
+            <div class="col-lg-5">
+                <div class="footer-brand mb-4">
+                    <img src="{% static 'user_querySafe/img/logo-ct-dark.png' %}" height="40" class="me-3" alt="QuerySafe Logo" />
+                    <div class="brand-info">
+                        <h4 class="brand-text mb-2">QuerySafe</h4>
+                        <p class="text-muted mb-0">Transform your query management with AI-powered intelligence. Build smarter, faster, and more efficient customer support solutions.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="col-lg-6">
+                <div class="row g-4">
+                    <!-- Product Links -->
+                    <div class="col-6 col-md-4">
+                        <h6 class="footer-title">Product</h6>
+                        <ul class="footer-links">
+                            <li><a href="{% url 'index' %}#features">Features</a></li>
+                            <li><a href="{% url 'index' %}#pricing">Pricing</a></li>
+                            <li><a href="{% url 'index' %}#how-it-works">How it Works</a></li>
+                            <li><a href="{% url 'index' %}#faq">FAQ</a></li>
+                        </ul>
+                    </div>
+
+                    <!-- Company Links -->
+                    <div class="col-6 col-md-4">
+                        <h6 class="footer-title">Company</h6>
+                        <ul class="footer-links">
+                            <li><a href="{% url 'contact' %}">Contact</a></li>
+                            <li><a href="{% url 'index' %}">Home</a></li>
+                        </ul>
+                    </div>
+
+                    <!-- Support Links -->
+                    <div class="col-6 col-md-4">
+                        <h6 class="footer-title">Support</h6>
+                        <ul class="footer-links">
+                            <li><a href="#" class="coming-soon">Help Center <span>Soon</span></a></li>
+                            <li><a href="#" class="coming-soon">Documentation <span>Soon</span></a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Bottom -->
+        <div class="footer-bottom">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start">
+                    <p class="copyright mb-0">© {% now 'Y' %} QuerySafe. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <ul class="legal-links">
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<style>
+.footer {
+    background: linear-gradient(to bottom, #f8f9ff 0%, #ffffff 100%);
+    border-top: 1px solid rgba(113, 37, 190, 0.1);
+}
+
+.footer-brand {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.brand-text {
+    color: #344767;
+    font-weight: 600;
+}
+
+.footer-title {
+    color: #344767;
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+    font-size: 1rem;
+}
+
+.footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-links li {
+    margin-bottom: 0.75rem;
+}
+
+.footer-links a {
+    color: #67748e;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+}
+
+.footer-links a:hover {
+    color: #7125be;
+    transform: translateX(5px);
+}
+
+.coming-soon span {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    background: rgba(113, 37, 190, 0.1);
+    color: #7125be;
+    border-radius: 100px;
+    margin-left: 0.5rem;
+}
+
+.footer-bottom {
+    padding-top: 2rem;
+    margin-top: 2rem;
+    border-top: 1px solid rgba(113, 37, 190, 0.1);
+}
+
+.copyright {
+    color: #67748e;
+    font-size: 0.95rem;
+}
+
+.legal-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 2rem;
+}
+
+.legal-links a {
+    color: #67748e;
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: color 0.3s ease;
+}
+
+.legal-links a:hover {
+    color: #7125be;
+}
+
+@media (max-width: 768px) {
+    .footer-brand {
+        margin-bottom: 2rem;
+    }
+    
+    .legal-links {
+        justify-content: center;
+        margin-top: 1rem;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .copyright {
+        text-align: center;
+    }
+}
+</style>

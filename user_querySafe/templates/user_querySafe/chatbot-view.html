@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot - {{ chatbot.name }}</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .welcome-text {
+            text-align: center;
+            margin-top: 40px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="welcome-text">
+            <h1>Welcome to {{ chatbot.name }}</h1>
+            <p>Click the chat icon in the bottom right corner to start a conversation.</p>
+        </div>
+    </div>
+
+    {% include 'user_querySafe/chatbot-widget.html' %}
+</body>
+</html>
