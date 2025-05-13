@@ -77,12 +77,47 @@ sudo systemctl restart gunicorn
 sudo systemctl restart nginx
 
 
-<!-- logs -->
+
+
+
+
+
+
+
+
+
+<!-- logs check-->
 # Check Gunicorn logs
 sudo journalctl -u gunicorn -n 50
 
 # Check Nginx error logs
 sudo tail -f /var/log/nginx/error.log   
+
+# check all activity
+systemctl list-units --type=service
+
+# reload all deamon
+sudo systemctl daemon-reload
+
+# live logs check
+journalctl -u gunicorn -f
+
+# gunicor start
+sudo systemctl start gunicorn
+
+# gunicorn status
+sudo systemctl start gunicorn
+
+
+
+
+
+
+
+
+
+
+
 
 <!-- 4.31 Updated nginx -->
 

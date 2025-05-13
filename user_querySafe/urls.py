@@ -38,4 +38,13 @@ urlpatterns = [
 
     # contact related path
     path('contact/', views.contact_view, name='contact'),
+
+    # subscriptions related path
+    path('subscriptions/', views.subscription_view, name='subscriptions'),
+    path('plan-activation/<str:plan_id>/', views.plan_activation_view, name='plan_activation'),
+
+    # usage related path
+    path('usage/', views.usage_view, name='usage'),
+
+    path('mail_templates/', views.mail_templates_view, name='mail_templates_view'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

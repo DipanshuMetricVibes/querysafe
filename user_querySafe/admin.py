@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import User, Chatbot, ChatbotDocument, Conversation, Message, Contact, ActivationCode
+from .models import User, Chatbot, ChatbotDocument, Conversation, Message, Contact, ActivationCode, SubscriptionPlan, UserPlanAlot
 
 @admin.register(ActivationCode)
 class ActivationCodeAdmin(admin.ModelAdmin):
@@ -119,6 +119,41 @@ class ContactAdmin(admin.ModelAdmin):
     def short_message(self, obj):
         return obj.message[:50] + '...' if len(obj.message) > 50 else obj.message
     short_message.short_description = 'Message'
+
+@admin.register(SubscriptionPlan)
+class SubscriptionPlanAdmin(admin.ModelAdmin):
+    list_display = (
+        'plan_id', 
+        'plan_name', 
+        'start_date', 
+        'no_of_bot', 
+        'no_query_per_bot', 
+        'no_of_docs_per_bot', 
+        'size_limit_per_docs', 
+        'pricing', 
+        'status', 
+        'timestamp'
+    )
+    search_fields = ('plan_name',)
+    list_filter = ('start_date', 'timestamp', 'status')
+
+
+@admin.register(UserPlanAlot)
+class UserPlanAlotAdmin(admin.ModelAdmin):
+    list_display = (
+        'plan_alot_id', 
+        'user', 
+        'plan_name', 
+        'start_date', 
+        'no_of_bot', 
+        'no_query', 
+        'no_of_docs', 
+        'doc_size_limit', 
+        'expire_date', 
+        'timestamp'
+    )
+    search_fields = ('plan_name', 'user__user_id')
+    list_filter = ('start_date', 'expire_date', 'timestamp')
 
 # Add custom admin site title and header
 admin.site.site_header = 'QuerySafe Administration'

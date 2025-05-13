@@ -62,17 +62,6 @@
       </div>
     </div>
 
-    <!-- Promotional Popup -->
-    <div id="promoPopup" class="promo-popup d-none">
-        <div class="promo-popup-content">
-            <button class="promo-popup-close" onclick="closePromoPopup()">×</button>
-            <img src="{% static 'user_querySafe/img/query-safe-banner.png' %}" alt="QuerySafe Banner" class="promo-popup-banner">
-            <div class="promo-popup-footer">
-                <a href="{% url 'contact' %}" class="btn bg-gradient-primary w-100">Contact Us</a>
-            </div>
-        </div>
-    </div>
-
     <!-- Core JS Files -->
     <script src="{% static 'user_querySafe/js/core/popper.min.js' %}"></script>
     <script src="{% static 'user_querySafe/js/core/bootstrap.min.js' %}"></script>
@@ -88,11 +77,7 @@
         border-radius: 0.75rem;
         box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
       }
-{% comment %} 
-      .toast.bg-gradient-danger {
-        background: linear-gradient(45deg, #f5365c, #f56036) !important;
-      } {% endcomment %}
-
+      
       .toast .toast-header {
         padding: 0.5rem 0.75rem;
         background-color: transparent;

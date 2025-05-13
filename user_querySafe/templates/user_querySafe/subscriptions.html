@@ -1,0 +1,84 @@
+{% extends 'user_querySafe/include/base.html' %}
+{% load static %}
+{% block title %}Subscription Plans{% endblock %}
+
+{% block content %}
+<section class="pricing py-5">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="fw-bold">Choose Your Subscription</h2>
+      <p class="text-muted">Select the plan that best fits your needs.</p>
+    </div>
+    <div class="row">
+      {% for plan in public_plans %}
+      <div class="col-lg-4 mb-4 d-flex align-items-stretch">
+        <div class="card shadow-sm border-0 w-90">
+          <div class="card-header text-center bg-gradient-primary">
+            <h4 class="mb-0 text-white">{{ plan.plan_name }}</h4>
+          </div>
+          <div class="card-body text-center">
+            <h1 class="card-title pricing-card-title display-4">
+              ${{ plan.pricing }} <small class="text-muted fs-6">/mo</small>
+            </h1>
+            <ul class="list-unstyled mt-4 mb-4">
+              <li class="mb-2">
+                <i class="material-symbols-rounded text-success align-middle me-2">verified</i>
+                <span>{{ plan.no_of_bot }} Chatbot</span>
+              </li>
+              <li class="mb-2">
+                <i class="material-symbols-rounded text-success align-middle me-2">verified</i>
+                <span>{{ plan.no_query_per_bot }} Queries/Chatbot</span>
+              </li>
+              <li class="mb-2">
+                <i class="material-symbols-rounded text-success align-middle me-2">verified</i>
+                <span>{{ plan.no_of_docs_per_bot }} Docs/Chatbot</span>
+              </li>
+              <li class="mb-2">
+                <i class="material-symbols-rounded text-success align-middle me-2">verified</i>
+                <span>Max {{ plan.size_limit_per_docs }}MB/Doc Size Limit</span>
+              </li>
+            </ul>
+            {% if plan.plan_id %}
+            <a href="{% url 'plan_activation' plan.plan_id %}" class="btn btn-lg btn-primary w-100">Select Plan</a>
+            {% else %}
+            <button class="btn btn-lg btn-primary w-100" disabled>Plan Unavailable</button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-12">
+        <p class="text-center">No public plans are available at the moment.</p>
+      </div>
+      {% endfor %}
+
+      <!-- Custom Plan Card -->
+      <div class="col-lg-4 mb-4 d-flex align-items-stretch">
+        <div class="card shadow-sm border-0 w-90">
+          <div class="card-header text-center bg-secondary text-white">
+            <h4 class="mb-0 text-white">Custom Plan</h4>
+          </div>
+          <div class="card-body text-center">
+            <h1 class="card-title pricing-card-title display-4">Contact Us</h1>
+            <ul class="list-unstyled mt-4 mb-4">
+              <li class="mb-2">
+                <i class="material-symbols-rounded text-success align-middle me-2">support_agent</i>
+                <span>Tailored Solutions</span>
+              </li>
+              <li class="mb-2">
+                <i class="material-symbols-rounded text-success align-middle me-2">support_agent</i>
+                <span>Unlimited Bots</span>
+              </li>
+              <li class="mb-2">
+                <i class="material-symbols-rounded text-success align-middle me-2">support_agent</i>
+                <span>Custom Queries</span>
+              </li>
+            </ul>
+            <a href="{% url 'contact' %}" class="btn btn-lg btn-secondary w-100">Contact Us</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

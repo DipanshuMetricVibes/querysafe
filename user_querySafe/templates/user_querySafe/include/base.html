@@ -11,6 +11,7 @@
         {{ block.super }} - {{ PROJECT_NAME }}
       {% endblock %}
     </title>
+
     <!-- Fonts and icons -->
     <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700,900" />
     <!-- Font Awesome Icons -->
@@ -122,25 +123,25 @@
           margin-left: 15rem;
         }
       }
-
+      
       /* Error Toast Styling */
       .toast.bg-danger {
         background: #f44335 !important;
       }
-
+      
       .toast.bg-danger .toast-body {
         color: #fff !important;
         font-weight: 500;
-        text-shadow: 0 1px 1px rgba(0,0,0,0.1);
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
       }
-
+      
       .toast.bg-danger .toast-header {
         color: #fff;
-        border-bottom: 1px solid rgba(255,255,255,0.1);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       }
-
+      
       .toast.bg-danger .horizontal.light {
-        background-color: rgba(255,255,255,0.1);
+        background-color: rgba(255, 255, 255, 0.1);
       }
     </style>
   </head>
@@ -168,7 +169,7 @@
           <small class="text-white">Just now</small>
           <i class="fas fa-times text-white ms-3 cursor-pointer" data-bs-dismiss="toast" aria-label="Close"></i>
         </div>
-        <hr class="horizontal light m-0">
+        <hr class="horizontal light m-0" />
         <div class="toast-body text-white" id="errorToastMessage" style="background: rgba(0,0,0,0.1);"></div>
       </div>
     </div>
@@ -177,8 +178,39 @@
       <!-- Navbar -->
       {% include 'user_querySafe/include/header-nav.html' %}
       <!-- End Navbar -->
+
       <div class="container-fluid py-2">
         <div class="body-container">
+          <!-- subscription status card -->
+          {% if not request.session.active_plan or request.session.active_plan == 'No active plan' %}
+            <div class="row">
+              <div class="col-12 mb-4">
+                <div class="card bg-gradient-danger shadow-lg border-0">
+                  <div class="card-body p-4">
+                    <div class="row align-items-center">
+                      <div class="col-12 col-md-8">
+                        <div class="d-flex align-items-center mb-2">
+                          <i class="material-symbols-rounded text-white me-3" style="font-size: 2rem;">campaign</i>
+                          <h4 class="text-white mb-0">Subscription Status (Inactive)</h4>
+                        </div>
+                        <p class="text-white mb-0 opacity-8">
+                          Use our this service by selecting a plan and enhance your experience with us.
+                        </p>
+                      </div>
+                      <div class="col-12 col-md-4 text-md-end mt-3 mt-md-0">
+                        <a href="{% url 'subscriptions' %}" class="btn btn-lg bg-white text-primary shadow-sm px-4">
+                          <i class="material-symbols-rounded me-2 align-middle">rocket_launch</i>
+                          <span class="align-middle">Select Plan</span>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+
+          <!-- fetching page conntent here -->
           {% block content %}
 
           {% endblock %}

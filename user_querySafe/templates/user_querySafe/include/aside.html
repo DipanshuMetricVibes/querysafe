@@ -1,71 +1,110 @@
 {% load static %}
 
 <aside class="sidenav navbar navbar-vertical navbar-expand-xs border-radius-lg fixed-start ms-2 bg-white my-2" id="sidenav-main">
-    <div class="sidenav-header">
-      <!-- Update close button -->
-      <button class="btn btn-link p-3 cursor-pointer text-dark position-absolute end-0 top-0 d-xl-none" id="iconSidenav">
-        <i class="material-symbols-rounded">close</i>
-      </button>
-      <a class="navbar-brand px-4 py-3 m-0" href="#">
-        <img src="{% static 'user_querySafe/img/logo-ct-dark.png' %}" class="navbar-brand-img" width="26" height="26" alt="main_logo">
-        <span class="ms-1 text-sm text-dark"><b>{{ PROJECT_NAME }}</b></span>
+  <div class="sidenav-header">
+    <!-- Update close button -->
+    <button class="btn btn-link p-3 cursor-pointer text-dark position-absolute end-0 top-0 d-xl-none" id="iconSidenav"><i class="material-symbols-rounded">close</i></button>
+    <a class="navbar-brand px-4 py-3 m-0" href="#">
+      <img src="{% static 'user_querySafe/img/logo-ct-dark.png' %}" class="navbar-brand-img" width="26" height="26" alt="main_logo" />
+      <span class="ms-1 text-sm text-dark"><b>{{ PROJECT_NAME }}</b></span>
+    </a>
+  </div>
+  <hr class="horizontal dark mt-0 mb-2" />
+  <div class="collapse navbar-collapse w-auto" id="sidenav-collapse-main">
+    <ul class="navbar-nav">
+      {% url 'dashboard' as dashboard_url %}
+      {% url 'my_chatbots' as chatbots_url %}
+
+      <li class="nav-item">
+        <a class="nav-link {% if request.path == dashboard_url %}
+            
+            active bg-gradient-primary text-white
+
+          {% else %}
+            
+            text-dark
+
+          {% endif %}"
+          href="{% url 'dashboard' %}">
+          <i class="material-symbols-rounded opacity-5">dashboard</i>
+          <span class="nav-link-text ms-1">Dashboard</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.path == chatbots_url %}
+            
+            active bg-gradient-primary text-white
+
+          {% else %}
+            
+            text-dark
+
+          {% endif %}"
+          href="{% url 'my_chatbots' %}">
+          <i class="material-symbols-rounded opacity-5">smart_toy</i>
+          <span class="nav-link-text ms-1">Chatbot</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        {% url 'conversations' as conversations_url %}
+        <a class="nav-link {% if request.path|slice:':14' == '/conversations' %}
+            
+            active bg-gradient-primary text-white
+
+          {% else %}
+            
+            text-dark
+
+          {% endif %}"
+          href="{% url 'conversations' %}">
+          <i class="material-symbols-rounded opacity-5">message</i>
+          <span class="nav-link-text ms-1">Conversations</span>
+        </a>
+      </li>
+      <li class="nav-item mt-3">
+        <h6 class="ps-4 ms-2 text-uppercase text-xs text-dark font-weight-bolder opacity-5">Account</h6>
+      </li>
+      <li class="nav-item">
+        {% url 'profile' as profile_url %}
+        <a class="nav-link {% if request.path == profile_url %}
+            
+            active bg-gradient-primary text-white
+
+          {% else %}
+            
+            text-dark
+
+          {% endif %}"
+          href="{% url 'profile' %}">
+          <i class="material-symbols-rounded opacity-5">person</i>
+          <span class="nav-link-text ms-1">Profile</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        {% url 'usage' as usage_url %}
+
+        <a class="nav-link {% if request.path == usage_url %}
+            
+        active bg-gradient-primary text-white
+
+          {% else %}
+            
+        text-dark
+
+          {% endif %}"
+          href="{% url 'usage' %}">
+          <i class="material-symbols-rounded opacity-5">receipt_long</i>
+          <span class="nav-link-text ms-1">Usage</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+  <div class="sidenav-footer position-absolute w-100 bottom-0">
+    <div class="mx-3">
+      <a class="btn bg-gradient-primary w-100" href="{% url 'logout' %}" type="button">
+        <i class="material-symbols-rounded opacity-5">logout</i>
+        Logout
       </a>
     </div>
-    <hr class="horizontal dark mt-0 mb-2">
-    <div class="collapse navbar-collapse w-auto" id="sidenav-collapse-main">
-      <ul class="navbar-nav">
-        {% url 'dashboard' as dashboard_url %}
-        {% url 'my_chatbots' as chatbots_url %}
-        
-        <li class="nav-item">
-          <a class="nav-link {% if request.path == dashboard_url %}active bg-gradient-primary text-white{% else %}text-dark{% endif %}" 
-             href="{% url 'dashboard' %}">
-            <i class="material-symbols-rounded opacity-5">dashboard</i>
-            <span class="nav-link-text ms-1">Dashboard</span>
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link {% if request.path == chatbots_url %}active bg-gradient-primary text-white{% else %}text-dark{% endif %}" 
-             href="{% url 'my_chatbots' %}">
-            <i class="material-symbols-rounded opacity-5">smart_toy</i>
-            <span class="nav-link-text ms-1">Chatbot</span>
-          </a>
-        </li>
-        <li class="nav-item">
-          {% url 'conversations' as conversations_url %}
-          <a class="nav-link {% if request.path|slice:':14' == '/conversations' %}active bg-gradient-primary text-white{% else %}text-dark{% endif %}" 
-             href="{% url 'conversations' %}">
-            <i class="material-symbols-rounded opacity-5">message</i>
-            <span class="nav-link-text ms-1">Conversations</span>
-          </a>
-        </li>
-        <li class="nav-item mt-3">
-          <h6 class="ps-4 ms-2 text-uppercase text-xs text-dark font-weight-bolder opacity-5">Account</h6>
-        </li>
-        <li class="nav-item">
-            {% url 'profile' as profile_url %}
-            <a class="nav-link {% if request.path == profile_url %}active bg-gradient-primary text-white{% else %}text-dark{% endif %}" 
-             href="{% url 'profile' %}">
-            <i class="material-symbols-rounded opacity-5">person</i>
-            <span class="nav-link-text ms-1">Profile</span>
-          </a>
-        </li>
-        
-        <li class="nav-item">
-          <a class="nav-link text-dark" href="#billing">
-            <i class="material-symbols-rounded opacity-5">receipt_long</i>
-            <span class="nav-link-text ms-1">Billing</span>
-          </a>
-        </li>
-        
-      </ul>
-    </div>
-    <div class="sidenav-footer position-absolute w-100 bottom-0">
-      <div class="mx-3">
-        <a class="btn bg-gradient-primary w-100" href="{% url 'logout' %}" type="button">
-          <i class="material-symbols-rounded opacity-5">logout</i>
-          Logout
-        </a>
-      </div>
-    </div>
+  </div>
 </aside>

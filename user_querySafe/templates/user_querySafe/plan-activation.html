@@ -1,0 +1,65 @@
+{% extends 'user_querySafe/include/auth-base.html' %}
+{% load static %}
+
+{% block title %}Plan Activation | {{ block.super }}{% endblock %}
+
+{% block content %}
+<main class="main-content mt-0 ps">
+    <div class="page-header align-items-start min-vh-100" style="background-image: url('{% static 'user_querySafe/img/curved-images/curved14.jpg' %}');">
+        <span class="mask bg-gradient-dark opacity-6"></span>
+        <div class="container my-auto">
+            <div class="row">
+                <div class="col-lg-5 col-md-8 col-12 mx-auto">
+                    <div class="card z-index-0 fadeIn3 fadeInBottom">
+                        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+                            <div class="bg-gradient-primary shadow-primary border-radius-lg py-3 pe-1">
+                                <h4 class="text-white font-weight-bolder text-center mt-2 mb-0">Plan Activation</h4>
+                            </div>
+                        </div>
+
+                        <div class="card-body">
+                            <!-- Plan Details -->
+                            <div class="alert alert-info text-white" style="background: linear-gradient(45deg, #2152ff, #21d4fd);">
+                                <h6 class="text-white mb-0">Selected Plan: {{ plan.plan_name }}</h6>
+                                <p class="mb-0">Price: ${{ plan.pricing }}</p>
+                            </div>
+
+                            {% if plan.pricing == 0 %}
+                                <!-- Activation Code Form -->
+                                <form method="POST">
+                                    {% csrf_token %}
+                                    <label class="form-label ms-2 mb-2">Enter Activation Code</label>
+                                    <div class="input-group input-group-outline mb-3">
+                                        <input type="text" 
+                                               name="activation_code" 
+                                               class="form-control text-center"
+                                               maxlength="8" 
+                                               pattern="[A-Z0-9]{8}" 
+                                               style="text-transform: uppercase; letter-spacing: 4px;"
+                                               placeholder="XXXXXXXX"
+                                               required>
+                                    </div>
+                                    <div class="text-center">
+                                        <button type="submit" class="btn bg-gradient-primary w-100 my-4 mb-2">
+                                            <i class="material-symbols-rounded me-2">verified_user</i>
+                                            Activate Plan
+                                        </button>
+                                    </div>
+                                </form>
+                            {% else %}
+                                <!-- Payment Options -->
+                                <div class="text-center">
+                                    <button class="btn bg-gradient-success w-100 my-4 mb-2">
+                                        <i class="material-symbols-rounded me-2">payment</i>
+                                        Proceed to Payment
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}

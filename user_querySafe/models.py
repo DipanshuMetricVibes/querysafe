@@ -293,3 +293,59 @@ class Contact(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+
+class SubscriptionPlan(models.Model):
+    plan_id = models.CharField(max_length=5, unique=True, primary_key=True)
+    plan_name = models.CharField(max_length=255)
+    start_date = models.DateField()
+    no_of_bot = models.PositiveIntegerField()
+    no_query_per_bot = models.PositiveIntegerField()
+    no_of_docs_per_bot = models.PositiveIntegerField()
+    size_limit_per_docs = models.PositiveIntegerField(help_text="Size limit per document in units (e.g., MB)")
+    pricing = models.DecimalField(max_digits=8, decimal_places=2, help_text="Plan pricing (e.g., in USD)", default=0.00)
+    STATUS_CHOICES = (
+        ('public', 'Public'),
+        ('limited', 'Limited'),
+        ('private', 'Private'),
+        ('personal', 'Personal'),
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='public')
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.plan_id:
+            # Generate a unique 5-digit alphanumeric id
+            while True:
+                new_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+                if not SubscriptionPlan.objects.filter(plan_id=new_id).exists():
+                    self.plan_id = new_id
+                    break
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.plan_name
+
+class UserPlanAlot(models.Model):
+    plan_alot_id = models.CharField(max_length=14, unique=True, primary_key=True)
+    user = models.ForeignKey(User, to_field='user_id', on_delete=models.CASCADE)
+    plan_name = models.CharField(max_length=255)
+    start_date = models.DateField()
+    no_of_bot = models.PositiveIntegerField()
+    no_query = models.PositiveIntegerField()
+    no_of_docs = models.PositiveIntegerField()
+    doc_size_limit = models.PositiveIntegerField(help_text="Document size limit in MB")
+    expire_date = models.DateField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.plan_alot_id:
+            # Generate a unique 8-digit alphanumeric id
+            while True:
+                new_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+                if not UserPlanAlot.objects.filter(plan_alot_id=new_id).exists():
+                    self.plan_alot_id = new_id
+                    break
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.user} - {self.plan_name}"

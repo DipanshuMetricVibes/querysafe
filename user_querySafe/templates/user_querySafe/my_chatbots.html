@@ -4,6 +4,33 @@
 {% endblock %}
 {% block content %}
 <div class="container-fluid py-2">
+  {% if messages %}
+  <div class="row mb-4">
+    <div class="col-12">
+      {% for message in messages %}
+      {% with message.message as msg %}
+      <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible text-white fade show" role="alert">
+        <span class="text-sm">
+          {% if msg.message %}
+            {{ msg.message }}
+          {% else %}
+            {{ msg }}
+          {% endif %}
+
+          {% if message.tags == 'error' %}
+          <a href="{% url 'subscriptions' %}" class="alert-link text-white">Subscribe to a plan</a> to continue.
+          {% elif message.tags == 'warning' %}
+          <a href="#help&support" class="alert-link text-white">Please connect with Help & Support</a>.
+          {% endif %}
+        <button type="button" class="btn-close text-lg py-3 opacity-10" data-bs-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">×</span>
+        </button>
+      </div>
+      {% endwith %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
   <div class="row">
     <div class="col-12">
       <div class="card my-4">

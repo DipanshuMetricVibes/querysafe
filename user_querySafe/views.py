@@ -1,14 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from .forms import RegisterForm, LoginForm, ChatbotCreateForm, OTPVerificationForm
-from .models import ActivationCode, Activity, Contact, User, Chatbot, ChatbotDocument, Conversation, Message, EmailOTP
-from django.core.exceptions import ObjectDoesNotExist
+from .models import ActivationCode, Activity, Contact, User, Chatbot, ChatbotDocument, Conversation, Message, EmailOTP, UserPlanAlot, SubscriptionPlan
 from django.http import JsonResponse
 import json
 from django.views.decorators.csrf import csrf_exempt
 import os
 import faiss
-import numpy as np
 from sentence_transformers import SentenceTransformer
 from google import genai
 from django.conf import settings
@@ -17,14 +15,14 @@ from django.views.decorators.http import require_POST
 from django.http import HttpResponse
 from django.utils import timezone
 from datetime import timedelta
-from django.db.models import Count, Avg
+from django.db.models import Count
 from django.core.mail import send_mail
 import random
-from django.urls import reverse
 from django.template.loader import render_to_string
 from .decorators import redirect_authenticated_user, login_required
 from django.views.decorators.http import require_http_methods
 from django.core.cache import cache
+from django.urls import reverse
 
 # Initialize models and clients
 embedding_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
@@ -33,20 +31,27 @@ client = genai.Client(vertexai=True, project=settings.PROJECT_ID, location=setti
 def generate_otp():
     return ''.join([str(random.randint(0, 9)) for _ in range(6)])
 
-def send_otp_email(email, otp):
+def send_otp_email(email, otp, name, verification_url):
     try:
-        subject = 'Email Verification OTP'
+        subject = 'Verify Your Account'
         
-        # Create HTML content
-        html_message = render_to_string('user_querySafe/email/otp_email.html', {
+        # Render the HTML template with personalized details
+        html_message = render_to_string('user_querySafe/email/registration-otp.html', {
             'otp': otp,
+            'name': name,
+            'verification_url': verification_url,
             'project_name': settings.PROJECT_NAME
         })
         
-        # Create plain text content
-        plain_message = f'Your OTP for email verification is: {otp}\nValid for 10 minutes.'
-            
-        # Send email
+        # Create plain-text fallback message with a clickable URL
+        plain_message = (
+            f"Hello {name},\n\n"
+            f"Your OTP is: {otp}\n\n"
+            f"Click the following link to verify your account:\n"
+            f"{verification_url}\n\n"
+            "The OTP is valid for 10 minutes."
+        )
+        
         send_mail(
             subject=subject,
             message=plain_message,
@@ -60,20 +65,44 @@ def send_otp_email(email, otp):
         print(f"Error sending email: {str(e)}")
         return False
 
+def send_welcome_email(email, name, dashboard_url):
+    try:
+        subject = "Welcome to QuerySafe"
+        html_message = render_to_string("user_querySafe/email/welcome-user.html", {
+            'name': name,
+            'dashboard_url': dashboard_url,
+            'project_name': settings.PROJECT_NAME
+        })
+        plain_message = (
+            f"Hello {name},\n\n"
+            f"Welcome to QuerySafe!\n"
+            f"Access your dashboard here: {dashboard_url}\n\n"
+            "Thank you for joining us."
+        )
+        send_mail(
+            subject=subject,
+            message=plain_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+            html_message=html_message,
+            fail_silently=False,
+        )
+        return True
+    except Exception as e:
+        print(f"Error sending welcome email: {str(e)}")
+        return False
+
 @redirect_authenticated_user
 def register_view(request):
     if request.method == 'POST':
         form = RegisterForm(request.POST)
         email = request.POST.get('email')
-
+        
         # Check if user exists and registration is incomplete
         try:
             existing_user = User.objects.get(email=email)
-            
-            # Store user_id in session
             request.session['pending_activation_user_id'] = existing_user.user_id
 
-            # Redirect based on registration status
             if existing_user.registration_status == 'registered':
                 messages.info(request, 'Please complete your email verification.')
                 return redirect('verify_otp')
@@ -87,12 +116,10 @@ def register_view(request):
                 messages.error(request, 'Email already registered! Please login.')
                 return redirect('login')
         except User.DoesNotExist:
-            # Continue with new registration
             pass
 
         password = request.POST.get('password')
         confirm_password = request.POST.get('confirm_password')
-        
         if password != confirm_password:
             messages.error(request, 'Passwords do not match!')
             return render(request, 'user_querySafe/register.html', {'form': form})
@@ -102,12 +129,10 @@ def register_view(request):
             email = form.cleaned_data['email']
             password = form.cleaned_data['password']
 
-            # Check if email already exists
             if User.objects.filter(email=email).exists():
-                messages.error(request, 'Email already registered!')    
+                messages.error(request, 'Email already registered!')
                 return render(request, 'user_querySafe/register.html', {'form': form})
 
-            # Create user with initial status
             user = User.objects.create(
                 name=name,
                 email=email,
@@ -116,13 +141,14 @@ def register_view(request):
                 registration_status='registered'
             )
 
-            # Generate and send OTP
             otp = generate_otp()
             EmailOTP.objects.filter(email=email).delete()
             EmailOTP.objects.create(email=email, otp=otp)
-            send_otp_email(email, otp)
-
-            # Store user_id in session
+            
+            # Build an absolute URL for OTP verification
+            verification_url = request.build_absolute_uri(reverse('verify_otp'))
+            
+            send_otp_email(email, otp, name, verification_url)
             request.session['pending_activation_user_id'] = user.user_id
 
             messages.success(request, 'Please check your email for the OTP verification code.')
@@ -197,6 +223,12 @@ def verify_activation_view(request):
                 # Set user session
                 request.session['user_id'] = user.user_id
                 
+                # Build dashboard URL
+                dashboard_url = request.build_absolute_uri(reverse('dashboard'))
+                
+                # Send welcome email with dynamic values
+                send_welcome_email(user.email, user.name, dashboard_url)
+                
                 # Clear activation session
                 del request.session['pending_activation_user_id']
                 
@@ -209,7 +241,6 @@ def verify_activation_view(request):
         except User.DoesNotExist:
             messages.error(request, 'User not found.')
             return redirect('login')
-    
     return render(request, 'user_querySafe/verify_account_activate.html')
 
 def index_view(request):
@@ -225,7 +256,7 @@ def login_view(request):
             try:
                 user = User.objects.get(email=email)
                 if user.password == password:
-                    # Check registration status
+                    # Check registration status and activate process if needed
                     if user.registration_status == 'registered':
                         request.session['pending_activation_user_id'] = user.user_id
                         messages.info(request, 'Please verify your email first.')
@@ -239,7 +270,16 @@ def login_view(request):
                         messages.info(request, 'Please activate your account.')
                         return redirect('verify_activation')
                     
+                    # Successful login, store user_id in session
                     request.session['user_id'] = user.user_id
+
+                    # Check for active user plan and store in session
+                    active_plan = UserPlanAlot.objects.filter(
+                        user=user,
+                        expire_date__gte=timezone.now()
+                    ).order_by('-timestamp').first()
+                    request.session['active_plan'] = active_plan.plan_name if active_plan else "No active plan"
+                    
                     messages.success(request, f'Welcome back, {user.name}!')
                     return redirect('dashboard')
                 else:
@@ -304,7 +344,24 @@ def dashboard_view(request):
 def my_chatbots(request):
     user = User.objects.get(user_id=request.session['user_id'])
     chatbots = Chatbot.objects.filter(user=user).prefetch_related('conversations')
-    return render(request, 'user_querySafe/my_chatbots.html', {'chatbots': chatbots})
+    
+    # Get active plan and usage data
+    active_plan = UserPlanAlot.objects.filter(
+        user=user,
+        expire_date__gte=timezone.now().date()
+    ).order_by('-timestamp').first()
+    
+    current_chatbots = chatbots.count()
+    
+    context = {
+        'chatbots': chatbots,
+        'active_plan': active_plan,
+        'chatbots_used': current_chatbots,
+        'chatbots_total': active_plan.no_of_bot if active_plan else 0,
+        'chatbots_remaining': (active_plan.no_of_bot - current_chatbots) if active_plan else 0
+    }
+    
+    return render(request, 'user_querySafe/my_chatbots.html', context)
 
 def logout_view(request):
     if 'user_id' in request.session:
@@ -315,25 +372,78 @@ def logout_view(request):
 @login_required
 def create_chatbot(request):
     user = User.objects.get(user_id=request.session['user_id'])
+    
+    # Get current active plan from UserPlanAlot
+    active_plan = UserPlanAlot.objects.filter(
+        user=user,
+        expire_date__gte=timezone.now().date()
+    ).order_by('-timestamp').first()  # Get the most recent active plan
+    
+    # Check if user has an active plan
+    if not active_plan:
+        context = {
+            'alert': {
+                'type': 'danger',
+                'message': 'You do not have an active subscription to create chatbots.',
+                'link': {
+                    'text': 'Subscribe to a plan',
+                    'url': 'subscriptions'
+                }
+            }
+        }
+        return render(request, 'user_querySafe/create_chatbot.html', context)
+    
+    # Get current number of chatbots
+    current_chatbots = Chatbot.objects.filter(
+        user=user,
+        created_at__gte=active_plan.start_date,
+        created_at__lte=active_plan.expire_date
+    ).count()
+    
+    # Check if user has reached their chatbot limit
+    if current_chatbots >= active_plan.no_of_bot:
+        context = {
+            'alert': {
+                'type': 'warning',
+                'message': f'You have reached your limit of {active_plan.no_of_bot} chatbots under the {active_plan.plan_name} plan.',
+                'link': {
+                    'text': 'Contact us to upgrade',
+                    'url': 'contact'
+                }
+            }
+        }
+        return render(request, 'user_querySafe/create_chatbot.html', context)
+
     if request.method == 'POST':
         form = ChatbotCreateForm(request.POST, request.FILES)
         if form.is_valid():
             chatbot = form.save(commit=False)
             chatbot.user = user
             chatbot.save()
-
-            # Handle multiple document uploads
-            for pdf_file in request.FILES.getlist('pdf_files'):
-                # Create ChatbotDocument instance
-                doc = ChatbotDocument(chatbot=chatbot)
-                doc.pdf_file = pdf_file  # Attach the pdf_file to the instance
-                doc.save()
-
-            messages.success(request, "Chatbot created successfully!")
+            
+            # Create activity record
+            Activity.objects.create(
+                user=user,
+                activity_type='create_chatbot',
+                description=f'Created new chatbot: {chatbot.name}'
+            )
+            
+            messages.success(request, 'Chatbot created successfully!')
             return redirect('my_chatbots')
     else:
         form = ChatbotCreateForm()
-    return render(request, 'user_querySafe/create_chatbot.html', {'form': form})
+    
+    # Add context for the template
+    context = {
+        'form': form,
+        'active_plan': active_plan,
+        'chatbots_used': current_chatbots,
+        'chatbots_total': active_plan.no_of_bot,
+        'chatbots_remaining': active_plan.no_of_bot - current_chatbots,
+        'plan_expires': active_plan.expire_date.strftime('%B %d, %Y')
+    }
+    
+    return render(request, 'user_querySafe/create_chatbot.html', context)
 
 @login_required
 def conversations_view(request, chatbot_id=None, conversation_id=None):
@@ -615,12 +725,18 @@ def chatbot_detail_view(request, pk):
 def profile_view(request):
     user = User.objects.get(user_id=request.session['user_id'])
     
+    # Get active plan
+    active_plan = UserPlanAlot.objects.filter(
+        user=user,
+        expire_date__gte=timezone.now().date()
+    ).order_by('-timestamp').first()
+    
     # Get statistics
     stats = {
         'total_chatbots': Chatbot.objects.filter(user=user).count(),
         'total_conversations': Conversation.objects.filter(chatbot__user=user).count(),
         'total_messages': Message.objects.filter(conversation__chatbot__user=user).count(),
-        'total_documents': ChatbotDocument.objects.filter(chatbot__user=user).count(),  # Changed Document to ChatbotDocument
+        'total_documents': ChatbotDocument.objects.filter(chatbot__user=user).count(),
     }
     
     # Get recent activities (last 10)
@@ -628,6 +744,7 @@ def profile_view(request):
     
     context = {
         'user': user,
+        'active_plan': active_plan,
         **stats,
         'recent_activities': recent_activities
     }
@@ -760,3 +877,99 @@ Message:
 
     return render(request, 'user_querySafe/contact-us.html')
 
+@login_required
+def subscription_view(request):
+    public_plans = SubscriptionPlan.objects.filter(status='public').order_by('pricing')
+    print("Plans:", [(plan.plan_id, plan.plan_name) for plan in public_plans])  # Changed from id to plan_id
+    return render(request, 'user_querySafe/subscriptions.html', {'public_plans': public_plans})
+
+@login_required
+def plan_activation_view(request, plan_id):
+    user = User.objects.get(user_id=request.session['user_id'])
+    plan = get_object_or_404(SubscriptionPlan, plan_id=plan_id, status='public')
+    
+    if request.method == 'POST':
+        if plan.pricing == 0:
+            activation_code = request.POST.get('activation_code')
+            try:
+                code = ActivationCode.objects.get(code=activation_code)
+                if code.times_used < 10:  # Using fixed value 10 instead of max_uses
+                    # Calculate dates
+                    start_date = timezone.now().date()
+                    expire_date = start_date + timedelta(days=30)  # 30 days from now
+                    
+                    # Create UserPlanAlot instance with plan details
+                    UserPlanAlot.objects.create(
+                        user=user,
+                        plan_name=plan.plan_name,
+                        start_date=start_date,
+                        no_of_bot=plan.no_of_bot,
+                        no_query=plan.no_query_per_bot,
+                        no_of_docs=plan.no_of_docs_per_bot,
+                        doc_size_limit=plan.size_limit_per_docs,
+                        expire_date=expire_date
+                    )
+                    
+                    # Update activation code usage
+                    code.times_used += 1
+                    code.save()
+                    
+                    # Update session with new plan
+                    request.session['active_plan'] = plan.plan_name
+                    
+                    messages.success(request, f'{plan.plan_name} activated successfully!')
+                    return redirect('dashboard')
+                else:
+                    messages.error(request, 'This activation code has reached its usage limit.')
+            except ActivationCode.DoesNotExist:
+                messages.error(request, 'Invalid activation code.')
+        else:
+            # Handle paid plans (implement payment gateway integration)
+            messages.info(request, 'Payment gateway integration coming soon!')
+            return redirect('subscriptions')
+    
+    return render(request, 'user_querySafe/plan-activation.html', {'plan': plan})
+
+@login_required
+def usage_view(request):
+    user = User.objects.get(user_id=request.session['user_id'])
+    
+    # Get active plan
+    active_plan = UserPlanAlot.objects.filter(
+        user=user,
+        expire_date__gte=timezone.now().date()
+    ).order_by('-timestamp').first()
+
+    # Get user's chatbots
+    chatbots = Chatbot.objects.filter(user=user)
+    
+    # Calculate totals
+    total_chatbots = chatbots.count()
+    total_messages = Message.objects.filter(conversation__chatbot__in=chatbots).count()
+    total_documents = ChatbotDocument.objects.filter(chatbot__in=chatbots).count()
+
+    # Calculate percentages
+    if active_plan:
+        chatbot_percentage = min(100, (total_chatbots / active_plan.no_of_bot * 100) if active_plan.no_of_bot > 0 else 0)
+        message_percentage = min(100, (total_messages / active_plan.no_query * 100) if active_plan.no_query > 0 else 0)
+        document_percentage = min(100, (total_documents / active_plan.no_of_docs * 100) if active_plan.no_of_docs > 0 else 0)
+    else:
+        chatbot_percentage = message_percentage = document_percentage = 0
+    
+    context = {
+        'user': user,
+        'active_plan': active_plan,
+        'total_chatbots': total_chatbots,
+        'total_messages': total_messages,
+        'total_documents': total_documents,
+        'chatbot_percentage': chatbot_percentage,
+        'message_percentage': message_percentage,
+        'document_percentage': document_percentage,
+        'recent_activities': Activity.objects.filter(user=user).order_by('-timestamp')[:10]
+    }
+    
+    return render(request, 'user_querySafe/usage.html', context)
+
+@login_required
+def mail_templates_view(request):
+    return render(request, 'user_querySafe/email/email-templates.html')
