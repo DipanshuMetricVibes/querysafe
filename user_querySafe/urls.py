@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import include, path
 from django.conf import settings
 from django.conf.urls.static import static
 from . import views
@@ -8,11 +8,10 @@ urlpatterns = [
     path('dashboard/', views.dashboard_view, name='dashboard'),
     path('', views.index_view, name='index'),
 
-    # chatbots related path
-    path('my_chatbots/', views.my_chatbots, name='my_chatbots'),
-    path('create_chatbot/', views.create_chatbot, name='create_chatbot'),
-    path('chatbot_status/', views.chatbot_status, name='chatbot_status'),
-    path('chatbot/<int:pk>/', views.chatbot_detail_view, name='chatbot_detail'),
+
+    # my custom modules
+    path('chatbot/', include('user_querySafe.chatbot.urls')),
+
 
     # authentication related path
     path('login/', views.login_view, name='login'),
@@ -40,11 +39,6 @@ urlpatterns = [
     path('contact/', views.contact_view, name='contact'),
 
     # subscriptions related path
-    path('subscriptions/', views.subscription_view, name='subscriptions'),
-    path('plan-activation/<str:plan_id>/', views.plan_activation_view, name='plan_activation'),
+    path('plan/', include('user_querySafe.subscription.urls'), name='plan'),
 
-    # usage related path
-    path('usage/', views.usage_view, name='usage'),
-
-    path('mail_templates/', views.mail_templates_view, name='mail_templates_view'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from .forms import RegisterForm, LoginForm, ChatbotCreateForm, OTPVerificationForm
+from .forms import RegisterForm, LoginForm, OTPVerificationForm
 from .models import ActivationCode, Activity, Contact, User, Chatbot, ChatbotDocument, Conversation, Message, EmailOTP, UserPlanAlot, SubscriptionPlan
 from django.http import JsonResponse
 import json
@@ -198,6 +198,65 @@ def verify_otp_view(request):
     
     return render(request, 'user_querySafe/verify_otp.html', {'form': form, 'user': user})
 
+
+@require_http_methods(["POST"])
+@csrf_exempt
+def resend_otp_view(request):
+    if request.method == 'POST':
+        try:
+            if 'pending_activation_user_id' not in request.session:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Invalid session. Please register again.'
+                })
+
+            user = User.objects.get(user_id=request.session['pending_activation_user_id'])
+            
+            # Add rate limiting using cache
+            cache_key = f'resend_otp_{user.email}'
+            if cache.get(cache_key):
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Please wait before requesting another OTP.'
+                })
+            
+            # Set cache to prevent duplicate requests
+            cache.set(cache_key, True, 30)  # 30 seconds cooldown
+            
+            # Generate new OTP
+            otp = generate_otp()
+            
+            # Delete any existing OTP
+            EmailOTP.objects.filter(email=user.email).delete()
+            
+            # Create new OTP
+            EmailOTP.objects.create(email=user.email, otp=otp)
+            
+            # Send OTP email
+            if send_otp_email(user.email, otp):
+                return JsonResponse({
+                    'success': True,
+                    'message': 'OTP sent successfully!'
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Failed to send OTP. Please try again.'
+                })
+        except User.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'User not found. Please register again.'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': str(e)
+            })
+    return JsonResponse({'success': False, 'message': 'Invalid request method.'})
+
+
+
 @redirect_authenticated_user
 def verify_activation_view(request):
     if 'pending_activation_user_id' not in request.session:
@@ -256,30 +315,21 @@ def login_view(request):
             try:
                 user = User.objects.get(email=email)
                 if user.password == password:
-                    # Check registration status and activate process if needed
-                    if user.registration_status == 'registered':
-                        request.session['pending_activation_user_id'] = user.user_id
-                        messages.info(request, 'Please verify your email first.')
-                        return redirect('verify_otp')
-                    elif user.registration_status == 'otp_verified':
-                        request.session['pending_activation_user_id'] = user.user_id
-                        messages.info(request, 'Please activate your account.')
-                        return redirect('verify_activation')
-                    elif not user.is_active:
-                        request.session['pending_activation_user_id'] = user.user_id
-                        messages.info(request, 'Please activate your account.')
-                        return redirect('verify_activation')
-                    
-                    # Successful login, store user_id in session
+                    # Check registration and activation status ...
+                    # Successful login: store user_id in session
                     request.session['user_id'] = user.user_id
 
-                    # Check for active user plan and store in session
+                    # Check for active plan AND that it hasn't expired
                     active_plan = UserPlanAlot.objects.filter(
                         user=user,
-                        expire_date__gte=timezone.now()
+                        expire_date__gte=timezone.now().date()
                     ).order_by('-timestamp').first()
-                    request.session['active_plan'] = active_plan.plan_name if active_plan else "No active plan"
                     
+                    if active_plan:
+                        request.session['active_plan'] = active_plan.plan_name
+                    else:
+                        request.session['active_plan'] = "No active plan"
+
                     messages.success(request, f'Welcome back, {user.name}!')
                     return redirect('dashboard')
                 else:
@@ -288,7 +338,7 @@ def login_view(request):
                 messages.error(request, 'No account found with this email')
     else:
         form = LoginForm()
-    
+
     return render(request, 'user_querySafe/login.html', {'form': form})
 
 @login_required
@@ -340,110 +390,11 @@ def dashboard_view(request):
     
     return render(request, 'user_querySafe/dashboard.html', context)
 
-@login_required
-def my_chatbots(request):
-    user = User.objects.get(user_id=request.session['user_id'])
-    chatbots = Chatbot.objects.filter(user=user).prefetch_related('conversations')
-    
-    # Get active plan and usage data
-    active_plan = UserPlanAlot.objects.filter(
-        user=user,
-        expire_date__gte=timezone.now().date()
-    ).order_by('-timestamp').first()
-    
-    current_chatbots = chatbots.count()
-    
-    context = {
-        'chatbots': chatbots,
-        'active_plan': active_plan,
-        'chatbots_used': current_chatbots,
-        'chatbots_total': active_plan.no_of_bot if active_plan else 0,
-        'chatbots_remaining': (active_plan.no_of_bot - current_chatbots) if active_plan else 0
-    }
-    
-    return render(request, 'user_querySafe/my_chatbots.html', context)
-
 def logout_view(request):
     if 'user_id' in request.session:
         del request.session['user_id']
         messages.success(request, 'You have been logged out successfully.')
     return redirect('login')
-
-@login_required
-def create_chatbot(request):
-    user = User.objects.get(user_id=request.session['user_id'])
-    
-    # Get current active plan from UserPlanAlot
-    active_plan = UserPlanAlot.objects.filter(
-        user=user,
-        expire_date__gte=timezone.now().date()
-    ).order_by('-timestamp').first()  # Get the most recent active plan
-    
-    # Check if user has an active plan
-    if not active_plan:
-        context = {
-            'alert': {
-                'type': 'danger',
-                'message': 'You do not have an active subscription to create chatbots.',
-                'link': {
-                    'text': 'Subscribe to a plan',
-                    'url': 'subscriptions'
-                }
-            }
-        }
-        return render(request, 'user_querySafe/create_chatbot.html', context)
-    
-    # Get current number of chatbots
-    current_chatbots = Chatbot.objects.filter(
-        user=user,
-        created_at__gte=active_plan.start_date,
-        created_at__lte=active_plan.expire_date
-    ).count()
-    
-    # Check if user has reached their chatbot limit
-    if current_chatbots >= active_plan.no_of_bot:
-        context = {
-            'alert': {
-                'type': 'warning',
-                'message': f'You have reached your limit of {active_plan.no_of_bot} chatbots under the {active_plan.plan_name} plan.',
-                'link': {
-                    'text': 'Contact us to upgrade',
-                    'url': 'contact'
-                }
-            }
-        }
-        return render(request, 'user_querySafe/create_chatbot.html', context)
-
-    if request.method == 'POST':
-        form = ChatbotCreateForm(request.POST, request.FILES)
-        if form.is_valid():
-            chatbot = form.save(commit=False)
-            chatbot.user = user
-            chatbot.save()
-            
-            # Create activity record
-            Activity.objects.create(
-                user=user,
-                activity_type='create_chatbot',
-                description=f'Created new chatbot: {chatbot.name}'
-            )
-            
-            messages.success(request, 'Chatbot created successfully!')
-            return redirect('my_chatbots')
-    else:
-        form = ChatbotCreateForm()
-    
-    # Add context for the template
-    context = {
-        'form': form,
-        'active_plan': active_plan,
-        'chatbots_used': current_chatbots,
-        'chatbots_total': active_plan.no_of_bot,
-        'chatbots_remaining': active_plan.no_of_bot - current_chatbots,
-        'plan_expires': active_plan.expire_date.strftime('%B %d, %Y')
-    }
-    
-    return render(request, 'user_querySafe/create_chatbot.html', context)
 
 @login_required
 def conversations_view(request, chatbot_id=None, conversation_id=None):
@@ -504,13 +455,6 @@ def chatbot_view(request, chatbot_id):
     
     return render(request, 'user_querySafe/chatbot-view.html', context)
 
-def chatbot_status(request):
-    if 'user_id' not in request.session:
-        return JsonResponse({'error': 'Unauthorized'}, status=403)
-    user = User.objects.get(user_id=request.session['user_id'])
-    chatbots = Chatbot.objects.filter(user=user)
-    data = [{'chatbot_id': bot.chatbot_id, 'status': bot.status} for bot in chatbots]
-    return JsonResponse(data, safe=False)
 
 @csrf_exempt
 def chat_message(request):
@@ -708,19 +652,6 @@ def get_widget_snippet(request, chatbot_id):
     snippet = get_widget_code(chatbot_id, base_url)
     return JsonResponse({'snippet': snippet})
 
-def chatbot_detail_view(request, pk):
-    if 'user_id' not in request.session:
-        return redirect('login')
-    
-    user = User.objects.get(user_id=request.session['user_id'])
-    chatbot = get_object_or_404(Chatbot, id=pk, user=user)
-    
-    context = {
-        'chatbot': chatbot,
-        # Add other context data as needed
-    }
-    return render(request, 'user_querySafe/chatbot_detail.html', context)
-
 @login_required
 def profile_view(request):
     user = User.objects.get(user_id=request.session['user_id'])
@@ -768,61 +699,6 @@ def update_profile(request):
     messages.success(request, 'Profile updated successfully!')
     return redirect('profile')
 
-@require_http_methods(["POST"])
-@csrf_exempt
-def resend_otp_view(request):
-    if request.method == 'POST':
-        try:
-            if 'pending_activation_user_id' not in request.session:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Invalid session. Please register again.'
-                })
-
-            user = User.objects.get(user_id=request.session['pending_activation_user_id'])
-            
-            # Add rate limiting using cache
-            cache_key = f'resend_otp_{user.email}'
-            if cache.get(cache_key):
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Please wait before requesting another OTP.'
-                })
-            
-            # Set cache to prevent duplicate requests
-            cache.set(cache_key, True, 30)  # 30 seconds cooldown
-            
-            # Generate new OTP
-            otp = generate_otp()
-            
-            # Delete any existing OTP
-            EmailOTP.objects.filter(email=user.email).delete()
-            
-            # Create new OTP
-            EmailOTP.objects.create(email=user.email, otp=otp)
-            
-            # Send OTP email
-            if send_otp_email(user.email, otp):
-                return JsonResponse({
-                    'success': True,
-                    'message': 'OTP sent successfully!'
-                })
-            else:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Failed to send OTP. Please try again.'
-                })
-        except User.DoesNotExist:
-            return JsonResponse({
-                'success': False,
-                'message': 'User not found. Please register again.'
-            })
-        except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'message': str(e)
-            })
-    return JsonResponse({'success': False, 'message': 'Invalid request method.'})
 
 def contact_view(request):
     if request.method == 'POST':
@@ -877,99 +753,3 @@ Message:
 
     return render(request, 'user_querySafe/contact-us.html')
 
-@login_required
-def subscription_view(request):
-    public_plans = SubscriptionPlan.objects.filter(status='public').order_by('pricing')
-    print("Plans:", [(plan.plan_id, plan.plan_name) for plan in public_plans])  # Changed from id to plan_id
-    return render(request, 'user_querySafe/subscriptions.html', {'public_plans': public_plans})
-
-@login_required
-def plan_activation_view(request, plan_id):
-    user = User.objects.get(user_id=request.session['user_id'])
-    plan = get_object_or_404(SubscriptionPlan, plan_id=plan_id, status='public')
-    
-    if request.method == 'POST':
-        if plan.pricing == 0:
-            activation_code = request.POST.get('activation_code')
-            try:
-                code = ActivationCode.objects.get(code=activation_code)
-                if code.times_used < 10:  # Using fixed value 10 instead of max_uses
-                    # Calculate dates
-                    start_date = timezone.now().date()
-                    expire_date = start_date + timedelta(days=30)  # 30 days from now
-                    
-                    # Create UserPlanAlot instance with plan details
-                    UserPlanAlot.objects.create(
-                        user=user,
-                        plan_name=plan.plan_name,
-                        start_date=start_date,
-                        no_of_bot=plan.no_of_bot,
-                        no_query=plan.no_query_per_bot,
-                        no_of_docs=plan.no_of_docs_per_bot,
-                        doc_size_limit=plan.size_limit_per_docs,
-                        expire_date=expire_date
-                    )
-                    
-                    # Update activation code usage
-                    code.times_used += 1
-                    code.save()
-                    
-                    # Update session with new plan
-                    request.session['active_plan'] = plan.plan_name
-                    
-                    messages.success(request, f'{plan.plan_name} activated successfully!')
-                    return redirect('dashboard')
-                else:
-                    messages.error(request, 'This activation code has reached its usage limit.')
-            except ActivationCode.DoesNotExist:
-                messages.error(request, 'Invalid activation code.')
-        else:
-            # Handle paid plans (implement payment gateway integration)
-            messages.info(request, 'Payment gateway integration coming soon!')
-            return redirect('subscriptions')
-    
-    return render(request, 'user_querySafe/plan-activation.html', {'plan': plan})
-
-@login_required
-def usage_view(request):
-    user = User.objects.get(user_id=request.session['user_id'])
-    
-    # Get active plan
-    active_plan = UserPlanAlot.objects.filter(
-        user=user,
-        expire_date__gte=timezone.now().date()
-    ).order_by('-timestamp').first()
-
-    # Get user's chatbots
-    chatbots = Chatbot.objects.filter(user=user)
-    
-    # Calculate totals
-    total_chatbots = chatbots.count()
-    total_messages = Message.objects.filter(conversation__chatbot__in=chatbots).count()
-    total_documents = ChatbotDocument.objects.filter(chatbot__in=chatbots).count()
-
-    # Calculate percentages
-    if active_plan:
-        chatbot_percentage = min(100, (total_chatbots / active_plan.no_of_bot * 100) if active_plan.no_of_bot > 0 else 0)
-        message_percentage = min(100, (total_messages / active_plan.no_query * 100) if active_plan.no_query > 0 else 0)
-        document_percentage = min(100, (total_documents / active_plan.no_of_docs * 100) if active_plan.no_of_docs > 0 else 0)
-    else:
-        chatbot_percentage = message_percentage = document_percentage = 0
-    
-    context = {
-        'user': user,
-        'active_plan': active_plan,
-        'total_chatbots': total_chatbots,
-        'total_messages': total_messages,
-        'total_documents': total_documents,
-        'chatbot_percentage': chatbot_percentage,
-        'message_percentage': message_percentage,
-        'document_percentage': document_percentage,
-        'recent_activities': Activity.objects.filter(user=user).order_by('-timestamp')[:10]
-    }
-    
-    return render(request, 'user_querySafe/usage.html', context)
-
-@login_required
-def mail_templates_view(request):
-    return render(request, 'user_querySafe/email/email-templates.html')
