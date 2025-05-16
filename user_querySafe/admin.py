@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import User, Chatbot, ChatbotDocument, Conversation, Message, Contact, ActivationCode, SubscriptionPlan, UserPlanAlot
+from .models import User, Chatbot, ChatbotDocument, Conversation, Message, Contact, ActivationCode, SubscriptionPlan, UserPlanAlot, HelpSupportRequest
 
 @admin.register(ActivationCode)
 class ActivationCodeAdmin(admin.ModelAdmin):
@@ -155,7 +155,12 @@ class UserPlanAlotAdmin(admin.ModelAdmin):
     search_fields = ('plan_name', 'user__user_id')
     list_filter = ('start_date', 'expire_date', 'timestamp')
 
-# Add custom admin site title and header
-admin.site.site_header = 'QuerySafe Administration'
-admin.site.site_title = 'QuerySafe Admin Portal'
-admin.site.index_title = 'Welcome to QuerySafe Admin Portal'
+@admin.register(HelpSupportRequest)
+class HelpSupportRequestAdmin(admin.ModelAdmin):
+    list_display = ('user', 'subject', 'message_preview', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('user__name', 'user__email', 'subject', 'message')
+
+    def message_preview(self, obj):
+        return obj.message[:50] + '...' if len(obj.message) > 50 else obj.message
+    message_preview.short_description = 'Message'

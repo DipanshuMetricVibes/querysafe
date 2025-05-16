@@ -41,4 +41,7 @@ urlpatterns = [
     # subscriptions related path
     path('plan/', include('user_querySafe.subscription.urls'), name='plan'),
 
+    # Help and support related paths
+    path('help-support/', views.help_support_view, name='help_support'),
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,11 +1,14 @@
-from pyexpat.errors import messages
+import json  # Add this import at the top
+from django.contrib import messages
 from django.http import JsonResponse
+from django.urls import reverse
 from django.utils import timezone
 from django.shortcuts import get_object_or_404, redirect, render
 from user_querySafe.decorators import login_required
 from user_querySafe.forms import ChatbotCreateForm
 from user_querySafe.models import Activity, Chatbot, ChatbotDocument, User, UserPlanAlot
-from user_querySafe.vectorization.pipeline_processor import run_pipeline_background
+from .pipeline_processor import run_pipeline_background
+
 
 @login_required
 def my_chatbots(request):
@@ -25,102 +28,118 @@ def my_chatbots(request):
         'active_plan': active_plan,
         'chatbots_used': current_chatbots,
         'chatbots_total': active_plan.no_of_bot if active_plan else 0,
-        'chatbots_remaining': (active_plan.no_of_bot - current_chatbots) if active_plan else 0
+        'chatbots_remaining': (active_plan.no_of_bot - current_chatbots) if active_plan else 0,
+        'show_toaster': False,
     }    
     return render(request, 'user_querySafe/my_chatbots.html', context)
-
 
 @login_required
 def create_chatbot(request):
     user = User.objects.get(user_id=request.session['user_id'])
-    
-    # Get current active plan from UserPlanAlot
+
+    # Get the current active plan
     active_plan = UserPlanAlot.objects.filter(
         user=user,
         expire_date__gte=timezone.now().date()
-    ).order_by('-timestamp').first()  # Most recent active plan
-    
-    # Check if user has an active plan
+    ).order_by('-timestamp').first()
+
     if not active_plan:
-        context = {
-            'alert': {
-                'type': 'danger',
-                'message': 'You do not have an active subscription to create chatbots.',
-                'link': {
-                    'text': 'Subscribe to a plan',
-                    'url': 'subscriptions'
-                }
-            }
-        }
-        return render(request, 'user_querySafe/create_chatbot.html', context)
-    
-    # Get current number of chatbots within plan duration
-    current_chatbots = Chatbot.objects.filter(
-        user=user,
-        created_at__gte=active_plan.start_date,
-        created_at__lte=active_plan.expire_date
-    ).count()
-    
+        messages.error(request, "You do not have an active subscription to create chatbots.")
+        return redirect('my_chatbots')
+
     # Check if user reached chatbot limit
+    current_chatbots = Chatbot.objects.filter(user=user).count()
     if current_chatbots >= active_plan.no_of_bot:
-        context = {
-            'alert': {
-                'type': 'warning',
-                'message': f'You have reached your limit of {active_plan.no_of_bot} chatbots under the {active_plan.plan_name} plan.',
-                'link': {
-                    'text': 'Contact us to upgrade',
-                    'url': 'contact'
-                }
-            }
-        }
-        return render(request, 'user_querySafe/create_chatbot.html', context)
-    
+        messages.warning(
+            request,
+            f"You have reached your limit of {active_plan.no_of_bot} chatbots under the {active_plan.plan_name} plan. "
+            f"<a href='{reverse('contact')}' class='alert-link'>Contact us to upgrade</a>."
+        )
+        return redirect('my_chatbots')
+
     if request.method == 'POST':
         form = ChatbotCreateForm(request.POST, request.FILES)
         if form.is_valid():
             chatbot = form.save(commit=False)
             chatbot.user = user
             chatbot.save()
-            
-            # Create activity record
-            Activity.objects.create(
-                user=user,
-                title='Chatbot Creation',
-                description=f'Created new chatbot: {chatbot.name}',
-                type='success'  # Allowed values: 'primary', 'success', 'info', 'warning'
-            )
-            
+
             # Process document uploads
             uploaded_docs = request.FILES.getlist('pdf_files')
-            print("DEBUG: Number of documents uploaded:", len(uploaded_docs))
-            if uploaded_docs:
-                for doc in uploaded_docs:
-                    ChatbotDocument.objects.create(
-                        chatbot=chatbot,
-                        document=doc  # use correct field name as defined in your model
-                    )
+            allowed_docs = active_plan.no_of_docs
+            allowed_size_bytes = active_plan.doc_size_limit * 1024 * 1024
+
+            if len(uploaded_docs) > allowed_docs:
+                messages.error(request, f"You can upload a maximum of {allowed_docs} file(s) as per your subscription.")
+                return redirect('create_chatbot')
+
+            successful_uploads = 0
+            for doc in uploaded_docs:
+                if doc.size > allowed_size_bytes:
+                    messages.error(request, f"File '{doc.name}' exceeds the size limit of {active_plan.doc_size_limit} MB.")
+                    continue
+
+                ChatbotDocument.objects.create(chatbot=chatbot, document=doc)
+                successful_uploads += 1
+
+            if successful_uploads > 0:
+                messages.success(request, f"Chatbot '{chatbot.name}' created successfully with {successful_uploads} document(s)!")
+                return redirect('my_chatbots')
             else:
-                print("DEBUG: No files found in request.FILES under 'pdf_files'")
-            
-            # Run the processing pipeline in background (will process uploaded documents)
-            run_pipeline_background(chatbot.chatbot_id)
-            
-            messages.success(request, 'Chatbot created successfully!')
-            return redirect('my_chatbots')
+                messages.error(request, "No documents were uploaded successfully.")
+                chatbot.delete()
+                return redirect('create_chatbot')
     else:
         form = ChatbotCreateForm()
-    
-    # Context for template
+
     context = {
         'form': form,
         'active_plan': active_plan,
-        'chatbots_used': current_chatbots,
-        'chatbots_total': active_plan.no_of_bot,
-        'chatbots_remaining': active_plan.no_of_bot - current_chatbots,
-        'plan_expires': active_plan.expire_date.strftime('%B %d, %Y')
     }
-    
     return render(request, 'user_querySafe/create_chatbot.html', context)
+
+@login_required
+def change_chatbot_status(request):
+    """
+    AJAX view to change the status of a chatbot.
+    Expects JSON with keys "chatbot_id" and "new_status".
+    """
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            chatbot_id = data.get('chatbot_id')
+            new_status = data.get('new_status')
+            
+            # Add user verification
+            user = User.objects.get(user_id=request.session['user_id'])
+            chatbot = get_object_or_404(Chatbot, chatbot_id=chatbot_id, user=user)
+            
+            # Update status
+            chatbot.status = new_status
+            chatbot.save()
+            
+            # Log the activity
+            Activity.objects.create(
+                user=user,
+                title='Chatbot Status Change',
+                description=f'Changed chatbot {chatbot.name} status to {new_status}',
+                type='info'
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Chatbot status changed to {new_status}'
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False, 
+                'error': str(e)
+            }, status=400)
+            
+    return JsonResponse({
+        'error': 'Invalid request method'
+    }, status=405)
 
 def chatbot_status(request):
     if 'user_id' not in request.session:

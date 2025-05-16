@@ -4,6 +4,7 @@
 {% block title %}Create Chatbot | {{ block.super }}{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="{% static 'user_querySafe/css/create_chatbot.css' %}">
 <div class="container-fluid py-2">
     {% if alert %}
     <div class="row mb-4">
@@ -12,11 +13,12 @@
                 <span class="text-sm">
                     {{ alert.message }}
                     {% if alert.link %}
-                        <a href="{% url alert.link.url %}" class="alert-link text-white">{{ alert.link.text }}</a>
-                        to continue.
+                    <a href="{% url alert.link.url %}" class="alert-link text-white">{{ alert.link.text }}</a>
+                    to continue.
                     {% endif %}
                 </span>
-                <button type="button" class="btn-close text-lg py-3 opacity-10" data-bs-dismiss="alert" aria-label="Close">
+                <button type="button" class="btn-close text-lg py-3 opacity-10" data-bs-dismiss="alert"
+                    aria-label="Close">
                     <span aria-hidden="true">×</span>
                 </button>
             </div>
@@ -27,41 +29,13 @@
     {% if not alert %}
     <div class="row">
         <div class="col-12">
-            <!-- Subscription Status Card -->
-            <div class="card mb-4">
-                <div class="card-body p-3">
-                    <div class="row align-items-center">
-                        <div class="col">
-                            <div class="d-flex align-items-center">
-                                <div class="icon-box bg-primary bg-opacity-10 text-primary me-3">
-                                    <i class="material-symbols-rounded">workspace_premium</i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-0">{{ active_plan.plan_name }}</h6>
-                                    <small class="text-muted">Active Subscription</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="text-end">
-                                    <small class="text-muted d-block">Chatbots Used</small>
-                                    <h6 class="mb-0">{{ chatbots_used }}/{{ chatbots_total }}</h6>
-                                </div>
-                                <div class="progress-circle" style="width: 40px; height: 40px;" data-value="{{ chatbots_used|divisibleby:chatbots_total }}">
-                                    <!-- Add a circular progress indicator here if desired -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <!-- Main Create Chatbot Card -->
             <div class="card my-4">
                 <!-- Header Section (matching my_chatbots.html style) -->
                 <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-                    <div class="d-flex justify-content-between align-items-center bg-gradient-primary shadow-dark border-radius-lg pt-4 pb-3 px-3">
+                    <div
+                        class="d-flex justify-content-between align-items-center bg-gradient-primary shadow-dark border-radius-lg pt-4 pb-3 px-3">
                         <h6 class="text-white text-capitalize mb-0">Create New Chatbot</h6>
                         <a href="{% url 'my_chatbots' %}" class="btn btn-white btn-sm text-dark">
                             <i class="material-symbols-rounded align-middle">arrow_back</i>
@@ -77,7 +51,8 @@
                         <div class="card shadow-sm mb-4">
                             <div class="card-header bg-light">
                                 <h5 class="mb-0">
-                                    <i class="material-symbols-rounded align-middle me-2 border-secondary rounded p-1">smart_toy</i>
+                                    <i
+                                        class="material-symbols-rounded align-middle me-2 border-secondary rounded p-1">smart_toy</i>
                                     Basic Details
                                 </h5>
                             </div>
@@ -87,13 +62,18 @@
                                     <div class="col-md-4 text-center">
                                         <div class="mb-3">
                                             <div class="logo-preview mb-3">
-                                                <img id="logo-preview" src="{% static 'user_querySafe/img/logo-ct-dark.png' %}" class="img-fluid rounded-circle border rounded-circle p-0" style="width: 150px; height: 150px; object-fit: cover;" />
+                                                <img id="logo-preview"
+                                                    src="{% static 'user_querySafe/img/logo-ct-dark.png' %}"
+                                                    class="img-fluid rounded-circle border rounded-circle p-0"
+                                                    style="width: 150px; height: 150px; object-fit: cover;" />
                                             </div>
                                             <label class="btn btn-outline-primary">
                                                 <i class="material-symbols-rounded align-middle">file_upload</i>
-                                                Upload Logo<input type="file" name="logo" id="logo-input" class="d-none" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewLogo(this)" />
+                                                Upload Logo<input type="file" name="logo" id="logo-input" class="d-none"
+                                                    accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewLogo(this)" />
                                             </label>
-                                            <div id="logo-error" class="text-danger small mt-2" style="display: none;"></div>
+                                            <div id="logo-error" class="text-danger small mt-2" style="display: none;">
+                                            </div>
                                             <div class="text-muted small mt-2">Recommended: 512x512px, Max 2MB</div>
                                         </div>
                                     </div>
@@ -109,7 +89,8 @@
                                         </div>
                                         <div class="mb-3">
                                             <label for="id_description" class="form-label d-flex align-items-center">
-                                                <i class="material-symbols-rounded me-2 border rounded p-1">description</i>
+                                                <i
+                                                    class="material-symbols-rounded me-2 border rounded p-1">description</i>
                                                 Description
                                             </label>
                                             {{ form.description }}
@@ -123,37 +104,44 @@
                         <div class="card shadow-sm mb-4">
                             <div class="card-header bg-light">
                                 <h5 class="mb-0">
-                                    <i class="material-symbols-rounded align-middle me-2 border-secondary rounded p-1">database</i>
+                                    <i
+                                        class="material-symbols-rounded align-middle me-2 border-secondary rounded p-1">database</i>
                                     Training Data
                                 </h5>
                             </div>
                             <div class="card-body">
                                 <!-- File Upload Area -->
-                                <div class="upload-area border rounded-3 p-4 text-center mb-3">
-                                    <i class="material-symbols-rounded text-primary border rounded p-2" style="font-size: 48px;">upload_file</i>
+                                <div class="upload-area rounded-3 p-4 text-center mb-3">
+                                    <i class="material-symbols-rounded text-primary border rounded p-2"
+                                        style="font-size: 48px;">upload_file</i>
                                     <h6 class="mt-3">Drag & Drop PDF Files Here</h6>
                                     <p class="text-muted small mb-3">or</p>
                                     <label class="btn btn-primary">
                                         <i class="material-symbols-rounded align-middle">attach_file</i>
-                                        Browse Files<input type="file" id="file-input" name="pdf_files" multiple accept=".pdf" class="d-none" onchange="handleFiles(this.files)" />
+                                        Browse Files<input type="file" id="file-input" name="pdf_files" multiple
+                                            accept=".pdf" class="d-none" onchange="handleFiles(this.files)" />
                                     </label>
-                                    <div class="text-muted small mt-2">Maximum 10 PDF files, 20MB each</div>
+                                    <div class="text-muted small mt-2">  Maximum {{ active_plan.no_of_docs|default:"5" }} PDF files, {{ active_plan.doc_size_limit|default:"2" }}MB each.
+</div>
                                 </div>
                                 <div class="disclaimer">
-                                    <p class="text-muted small">*Currently, only PDF files are supported. Support for additional file types will be added in future updates.</p>
+                                    <p class="text-muted small">*Currently, only PDF files are supported. Support for
+                                        additional file types will be added in future updates.</p>
                                 </div>
 
                                 <!-- Uploaded Files List -->
                                 <div id="files-list" class="border rounded-3 p-3" style="display: none;">
                                     <h6 class="mb-3">
-                                        <i class="material-symbols-rounded align-middle me-2 border rounded p-1">folder</i>
+                                        <i
+                                            class="material-symbols-rounded align-middle me-2 border rounded p-1">folder</i>
                                         Uploaded Files
                                     </h6>
                                     <div id="files-container">
                                         <!-- Files will be listed here via JavaScript -->
                                     </div>
                                 </div>
-                                <div id="file-error" class="text-danger small mt-2" style="display: none;"></div>
+                                <div id="file-error" class="alert alert-danger py-2 mt-2 text-white" style="display: none;">
+                                    <i class="material-symbols-rounded align-middle me-2">error</i>
                             </div>
                         </div>
 
@@ -175,6 +163,7 @@
 
 {% block extra_js %}
 <script>
+
     function previewLogo(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader()
@@ -184,114 +173,167 @@
             reader.readAsDataURL(input.files[0])
         }
     }
-    
-    function handleFiles(files) {
-        const container = document.getElementById('files-container')
-        const filesList = document.getElementById('files-list')
-        container.innerHTML = ''
-    
-        Array.from(files).forEach((file) => {
-            const fileItem = `
-                    <div class="file-item">
-                        <i class="material-symbols-rounded text-primary me-2">description</i>
-                        <div class="flex-grow-1">
-                            <div class="fw-medium">${file.name}</div>
-                            <div class="text-muted small">${(file.size / 1024 / 1024).toFixed(2)} MB</div>
-                        </div>
-                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.parentElement.remove()">
-                            <i class="material-symbols-rounded">close</i>
-                        </button>
-                    </div>
-                `
-            container.insertAdjacentHTML('beforeend', fileItem)
-        })
-    
-        filesList.style.display = files.length ? 'block' : 'none'
+
+        // Allowed values passed from the backend plan
+    const allowedDocs = {{ active_plan.no_of_docs|default:0 }};
+    const allowedDocSizeMB = {{ active_plan.doc_size_limit|default:0 }};
+
+    // Create a DataTransfer to keep track of accumulated files
+    let accumulatedFiles = new DataTransfer();
+
+    // Update UI to list all accumulated files
+    function updateFilesUI(files) {
+      const container = document.getElementById('files-container');
+      const filesList = document.getElementById('files-list');
+      container.innerHTML = '';
+      Array.from(files).forEach((file) => {
+        const fileItem = `
+          <div class="file-item">
+            <i class="material-symbols-rounded text-primary me-2">description</i>
+            <div class="flex-grow-1">
+              <div class="fw-medium">${file.name}</div>
+              <div class="text-muted small">${(file.size / 1024 / 1024).toFixed(2)} MB</div>
+            </div>
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeFile('${file.name}')">
+              <i class="material-symbols-rounded">close</i>
+            </button>
+          </div>
+        `;
+        container.insertAdjacentHTML('beforeend', fileItem);
+      });
+      filesList.style.display = files.length ? 'block' : 'none';
     }
-    
-    // Drag and drop handling
-    const uploadArea = document.querySelector('.upload-area')
-    
+
+    // Called when files are selected or dropped to add them to the accumulatedFiles list.
+    function handleFiles(newFiles) {
+      const errorContainer = document.getElementById('file-error');
+      errorContainer.style.display = 'none';
+      let currentCount = accumulatedFiles.files.length;
+      for (const file of newFiles) {
+          // Check file count against allowed limit
+          if (currentCount >= allowedDocs) {
+              errorContainer.textContent = "You can upload a maximum of " + allowedDocs + " file(s) as per your subscription.";
+              errorContainer.style.display = 'block';
+              break;
+          }
+          // Check file size limit (in MB)
+          if (file.size > allowedDocSizeMB * 1024 * 1024) {
+              errorContainer.textContent = "File '" + file.name + "' exceeds the allowed size limit of " + allowedDocSizeMB + " MB.";
+              errorContainer.style.display = 'block';
+              continue;  // Skip this file
+          }
+          // Optionally check for duplicate file names
+          let exists = false;
+          for (const existingFile of accumulatedFiles.files) {
+              if (existingFile.name === file.name) {
+                  exists = true;
+                  break;
+              }
+          }
+          if (!exists) {
+              accumulatedFiles.items.add(file);
+              currentCount++;
+          }
+      }
+      // Update the file input's FileList with our accumulated files.
+      document.getElementById('file-input').files = accumulatedFiles.files;
+      updateFilesUI(accumulatedFiles.files);
+    }
+
+    // Remove a file from the accumulated list using its name.
+    function removeFile(fileName) {
+      const dt = new DataTransfer();
+      for (const file of accumulatedFiles.files) {
+          if (file.name !== fileName) {
+              dt.items.add(file);
+          }
+      }
+      accumulatedFiles = dt;
+      document.getElementById('file-input').files = accumulatedFiles.files;
+      updateFilesUI(accumulatedFiles.files);
+    }
+
+    // Drag and drop events.
+    const uploadArea = document.querySelector('.upload-area');
     uploadArea.addEventListener('dragover', (e) => {
-        e.preventDefault()
-        uploadArea.style.borderColor = '#0d6efd'
-        uploadArea.style.backgroundColor = '#f8f9fa'
-    })
-    
+        e.preventDefault();
+        uploadArea.style.borderColor = '#0d6efd';
+        uploadArea.style.backgroundColor = '#f8f9fa';
+    });
     uploadArea.addEventListener('dragleave', (e) => {
-        e.preventDefault()
-        uploadArea.style.borderColor = '#dee2e6'
-        uploadArea.style.backgroundColor = ''
-    })
-    
+        e.preventDefault();
+        uploadArea.style.borderColor = '#dee2e6';
+        uploadArea.style.backgroundColor = '';
+    });
     uploadArea.addEventListener('drop', (e) => {
-        e.preventDefault()
-        uploadArea.style.borderColor = '#dee2e6'
-        uploadArea.style.backgroundColor = ''
-    
-        const files = e.dataTransfer.files
-        document.getElementById('file-input').files = files
-        handleFiles(files)
-    })
-    
-    // Form validation to ensure at least one PDF is uploaded
+        e.preventDefault();
+        uploadArea.style.borderColor = '#dee2e6';
+        uploadArea.style.backgroundColor = '';
+        const files = e.dataTransfer.files;
+        handleFiles(files);
+    });
+
+    // Form validation on submit.
     document.querySelector('form').addEventListener('submit', function (e) {
-        const fileInput = document.getElementById('file-input')
-        const errorContainer = document.getElementById('file-error')
-        if (!fileInput.files.length) {
-            e.preventDefault() // Prevent form submission
-            errorContainer.textContent = 'Please upload at least one PDF file before proceeding.'
-            errorContainer.style.display = 'block' // Show the error
+        const errorContainer = document.getElementById('file-error');
+        if (!accumulatedFiles.files.length) {
+            e.preventDefault();
+            errorContainer.textContent = 'Please upload at least one PDF file before proceeding.';
+            errorContainer.style.display = 'block';
+        } else if (accumulatedFiles.files.length > allowedDocs) {
+            // This check is extra; ideally, our handleFiles prevents exceeding the allowed count.
+            e.preventDefault();
+            errorContainer.textContent = "You can only upload " + allowedDocs + " file(s).";
+            errorContainer.style.display = 'block';
         } else {
-            errorContainer.style.display = 'none' // Hide the error if files are uploaded
+            errorContainer.style.display = 'none';
         }
-    })
-    
+    });
 </script>
 {% endblock %}
 
 {% block extra_css %}
 <style>
-.alert {
-    position: relative;
-    padding: 1rem 1.5rem;
-    margin-bottom: 1rem;
-    border: 0;
-    border-radius: 0.75rem;
-}
+    .alert {
+        position: relative;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1rem;
+        border: 0;
+        border-radius: 0.75rem;
+    }
 
-.alert.alert-dismissible .btn-close {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    right: 1rem;
-    padding: 0;
-    background: transparent;
-}
+    .alert.alert-dismissible .btn-close {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        right: 1rem;
+        padding: 0;
+        background: transparent;
+    }
 
-.alert.alert-danger {
-    background-image: linear-gradient(195deg, #ec407a 0%, #d81b60 100%);
-    color: #ffffff;
-    box-shadow: 0 4px 20px 0 rgba(0,0,0,.14), 0 7px 10px -5px rgba(233,30,99,.4);
-}
+    .alert.alert-danger {
+        background-image: linear-gradient(195deg, #d01b1b 0%, #a00000 100%);
+        color: #ffffff;
+        box-shadow: 0 4px 20px 0 rgba(0, 0, 0, .14), 0 7px 10px -5px rgba(233, 30, 99, .4);
+    }
 
-.alert.alert-warning {
-    background-image: linear-gradient(195deg, #fb8c00 0%, #f57c00 100%);
-    color: #ffffff;
-    box-shadow: 0 4px 20px 0 rgba(0,0,0,.14), 0 7px 10px -5px rgba(255,152,0,.4);
-}
+    .alert.alert-warning {
+        background-image: linear-gradient(195deg, #fb8c00 0%, #f57c00 100%);
+        color: #ffffff;
+        box-shadow: 0 4px 20px 0 rgba(0, 0, 0, .14), 0 7px 10px -5px rgba(255, 152, 0, .4);
+    }
 
-.alert .alert-link.text-white {
-    border-bottom: 1px solid rgba(255,255,255,.5);
-}
+    .alert .alert-link.text-white {
+        border-bottom: 1px solid rgba(255, 255, 255, .5);
+    }
 
-.alert .alert-link.text-white:hover {
-    border-bottom: 1px solid #ffffff;
-    opacity: .8;
-}
+    .alert .alert-link.text-white:hover {
+        border-bottom: 1px solid #ffffff;
+        opacity: .8;
+    }
 
-.btn-close {
-    color: #ffffff;
-}
+    .btn-close {
+        color: #ffffff;
+    }
 </style>
 {% endblock %}

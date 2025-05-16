@@ -1,0 +1,63 @@
+--- Chunk 1 ---
+--- Page: C6ANSR_PackageSlip_T17456YQ57581D4V41_93swlWe.pdf_page1.png ---
+Here's a breakdown of the image, covering text, tables, charts/graphs, and images/diagrams.
+
+**1. Text:**
+
+*   **DELHIVERY** (Logo)
+*   Delhivery Direct
+*   To send items, visit www.delhivery.com/direct
+*   Order Date: 26/04/2025
+*   Product Type
+*   EXPRESS
+*   WAYBILL NUMBER - PREPAID
+*   2827763718722
+*   TO (CONSIGNEE ADDRESS)
+*   Himanshu Kumar, Hostel-2 Room no.- 093, Tolani maritime institute Talegaon, Chakan Road Induri , Talegaon Maharashtra - 410507,
+*   Talegaon Dabhade, maharashtra- 410507.
+*   ITEM DETAILS
+*   Item Description:
+*   Books & Documents - Envelope / Pouch
+*   Declared Weight:
+*   0 - 500gms
+*   Shipping Mode:
+*   EXPRESS
+*   Declared Value:
+*   ₹2000.00
+*   FROM
+*   Dipanshu Saini, Santlal colony, Jaroda Muzaffarnagar, Muzaffarnagar, uttar pradesh, 251003
+*   DISCLAIMER
+*   Personal/Used goods, Not for sale - No commercial value
+*   The shipper hereby declares that he/she accepts the conditions of use as listed on
+    https://www.delhivery.com/direct/app/terms
+
+**2. Tables:**
+
+This image contains what can be represented as a table, which I'll present in plain text format.
+
+|Header| Value|
+|---|---|
+|Item Description| Books & Documents - Envelope / Pouch |
+|Declared Weight| 0 - 500gms |
+|Shipping Mode| EXPRESS|
+|Declared Value|₹2000.00|
+
+**3. Charts/Graphs:**
+
+--- Chunk 2 ---
+|Header| Value|
+|---|---|
+|Item Description| Books & Documents - Envelope / Pouch |
+|Declared Weight| 0 - 500gms |
+|Shipping Mode| EXPRESS|
+|Declared Value|₹2000.00|
+
+**3. Charts/Graphs:**
+
+*   **Barcode:** A vertical barcode is present. This barcode represents the waybill number. The numerical representation of the barcode is: 2827763718722.
+
+**4. Images/Diagrams:**
+
+*   **Delhivery Logo:**  The image has a "DELHIVERY" logo at the top left. The logo uses a stylized font.
+*   **Barcode:** This is a visual representation of the waybill number. It is made of vertical lines of varying thickness.
+

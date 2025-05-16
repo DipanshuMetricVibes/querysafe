@@ -114,6 +114,17 @@
           <i class="material-symbols-rounded opacity-5">receipt_long</i>
           <span class="nav-link-text ms-1">Usage</span>
         </a>
+      <li class="nav-item">
+        {% url 'help_support' as help_support_url %}
+        <a class="nav-link {% if request.path == help_support_url %}
+        active bg-gradient-primary text-white
+          {% else %}
+        text-dark
+          {% endif %}"
+          href="{{ help_support_url }}">
+          <i class="material-symbols-rounded opacity-5">help</i>
+          <span class="nav-link-text ms-1">Help & Support</span>
+        </a>
       </li>
     </ul>
   </div>

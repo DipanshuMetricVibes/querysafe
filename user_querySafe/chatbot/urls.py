@@ -6,4 +6,5 @@ urlpatterns = [
     path('create/', views.create_chatbot, name='create_chatbot'),
     path('chatbot_status/', views.chatbot_status, name='chatbot_status'),
     path('chatbot/<int:pk>/', views.chatbot_detail_view, name='chatbot_detail'),
+    path('change_status/', views.change_chatbot_status, name='change_chatbot_status'),
 ]

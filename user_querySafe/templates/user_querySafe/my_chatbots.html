@@ -1,39 +1,29 @@
 {% extends 'user_querySafe/include/base.html' %}
-{% block title %}
-  Chatbot {{ block.super }}
-{% endblock %}
+{% block title %}Chatbot {{ block.super }}{% endblock %}
+
 {% block content %}
 <div class="container-fluid py-2">
   {% if messages %}
   <div class="row mb-4">
     <div class="col-12">
       {% for message in messages %}
-      {% with message.message as msg %}
-      <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible text-white fade show" role="alert">
+      <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% else %}success{% endif %} alert-dismissible text-white fade show" role="alert">
         <span class="text-sm">
-          {% if msg.message %}
-            {{ msg.message }}
-          {% else %}
-            {{ msg }}
-          {% endif %}
-
-          {% if message.tags == 'error' %}
-          <a href="{% url 'subscriptions' %}" class="alert-link text-white">Subscribe to a plan</a> to continue.
-          {% elif message.tags == 'warning' %}
-          <a href="#help&support" class="alert-link text-white">Please connect with Help & Support</a>.
-          {% endif %}
+          {{ message|safe }}
+        </span>
         <button type="button" class="btn-close text-lg py-3 opacity-10" data-bs-dismiss="alert" aria-label="Close">
           <span aria-hidden="true">×</span>
         </button>
       </div>
-      {% endwith %}
       {% endfor %}
     </div>
   </div>
   {% endif %}
+
   <div class="row">
     <div class="col-12">
       <div class="card my-4">
+        <!-- Card Header -->
         <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
           <div class="d-flex justify-content-between align-items-center bg-gradient-primary shadow-dark border-radius-lg pt-4 pb-3 px-3">
             <h6 class="text-white text-capitalize mb-0">My Chatbots</h6>
@@ -43,6 +33,8 @@
             </a>
           </div>
         </div>
+
+        <!-- Card Body -->
         <div class="card-body px-0 pb-2">
           <div class="table-responsive p-0">
             <table class="table align-items-center mb-0">
@@ -105,30 +97,28 @@
                                 onclick="{% if bot.status == 'trained' %}copySnippet('{{ bot.chatbot_id }}'){% endif %}" 
                                 title="{% if bot.status == 'trained' %}Click to copy widget code{% else %}Available after training completes{% endif %}"
                                 {% if bot.status != 'trained' %}disabled{% endif %}>
-                            <i class="material-symbols-rounded me-1 copy-icon">content_copy</i>
+                            <i class="material-symbols-rounded me-1">content_copy</i>
                             <span class="text-xs" id="button-text-{{ bot.chatbot_id }}">Widget Code</span>
                         </button>
-                        <code id="snippet-{{ bot.chatbot_id }}" style="display: none;">
-                          {{ bot.snippet_code }}
-                        </code>
+                        <code id="snippet-{{ bot.chatbot_id }}" style="display: none;">{{ bot.snippet_code }}</code>
                       </div>
                     </td>
                     <td class="align-middle text-center">
                       <div class="btn-group" role="group">
-                        <a href="#edit_chatbot" 
-                           class="btn btn-link text-dark px-2 mb-0" 
-                           title="Edit">
+                        <a href="#edit_chatbot" class="btn btn-link text-dark px-2 mb-0" title="Edit">
                           <i class="material-symbols-rounded">edit</i>
                         </a>
-                        <a target="_blank" href="{% if bot.status == 'trained' %}{% url 'chatbot_view' bot.chatbot_id %}{% endif %}" 
+                        <a target="_blank" 
+                           href="{% if bot.status == 'trained' %}{% url 'chatbot_view' bot.chatbot_id %}{% endif %}" 
                            class="btn btn-link text-primary px-2 mb-0 {% if bot.status != 'trained' %}disabled opacity-50{% endif %}" 
                            title="{% if bot.status == 'trained' %}View{% else %}Available after training completes{% endif %}">
                           <i class="material-symbols-rounded">open_in_new</i>
                         </a>
                         <button type="button" 
+                                onclick="confirmStatusChange('{{ bot.chatbot_id }}', '{{ bot.status }}')"
                                 class="btn btn-link text-{% if bot.status == 'trained' %}danger{% else %}success{% endif %} px-2 mb-0" 
-                                title="{% if bot.status|lower == 'active' %}Disable{% else %}Enable{% endif %}">
-                          <i class="material-symbols-rounded">{% if bot.status|lower == 'active' %}block{% else %}play_circle{% endif %}</i>
+                                title="{% if bot.status == 'trained' %}Disable{% else %}Enable{% endif %}">
+                          <i class="material-symbols-rounded">{% if bot.status == 'trained' %}block{% else %}play_circle{% endif %}</i>
                         </button>
                       </div>
                     </td>
@@ -136,7 +126,7 @@
                   {% endfor %}
                 {% else %}
                   <tr>
-                    <td colspan="8" class="text-center py-5 align-middle">
+                    <td colspan="8" class="text-center py-5">
                       <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 200px;">
                         <i class="material-symbols-rounded text-secondary mb-3" style="font-size: 48px;">smart_toy</i>
                         <h5 class="mt-2 mb-1 text-secondary">No Chatbot Found</h5>
@@ -173,7 +163,7 @@
     width: 100%;
     height: 100%;
     padding: 5px;
-    object-fit: cover; /* Maintain aspect ratio and fill the container */
+    object-fit: cover;
   }
   .btn-group .btn-link {
     text-decoration: none;
@@ -185,25 +175,19 @@
   .cursor-pointer {
     cursor: pointer;
   }
-  code:hover {
-    background-color: #f8f9fa;
-  }
-  .btn.btn-sm i{
+  .btn.btn-sm i {
     font-size: 0.8rem;
   }
-
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
-
   .status-badge-training {
     position: relative;
     padding-left: 20px;
     display: inline-flex;
     align-items: center;
   }
-
   .status-badge-training::before {
     content: "";
     position: absolute;
@@ -214,31 +198,33 @@
     border-right-color: transparent;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
-    margin-top: 0;  /* Remove any top margin */
-    transform: none; /* Remove the translateY */
   }
-
   .disabled {
     pointer-events: none;
     cursor: not-allowed !important;
   }
-
   .opacity-50 {
     opacity: 0.5;
   }
 </style>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Status polling
   var pollingInterval = setInterval(function() {
     fetch("{% url 'chatbot_status' %}")
       .then(response => response.json())
       .then(data => {
-        let now = Date.now() / 1000;  // current time in seconds
+        let now = Date.now() / 1000;
         let allExpired = true;
         data.forEach(function(bot) {
           var row = document.getElementById("chatbot-row-" + bot.chatbot_id);
           if(row) {
             var createdAt = parseFloat(row.getAttribute("data-created-at"));
-            // Only update status if within 2 minutes (120 seconds) of creation
             if((now - createdAt) < 120) {
               allExpired = false;
               var elem = document.getElementById("status-" + bot.chatbot_id);
@@ -246,17 +232,10 @@
                 elem.innerHTML = bot.status.charAt(0).toUpperCase() + bot.status.slice(1);
                 var badgeClass;
                 switch(bot.status) {
-                  case 'trained':
-                    badgeClass = 'success';
-                    break;
-                  case 'training':
-                    badgeClass = 'warning';
-                    break;
-                  default:
-                    badgeClass = 'secondary';
+                  case 'trained': badgeClass = 'success'; break;
+                  case 'training': badgeClass = 'warning'; break;
+                  default: badgeClass = 'secondary';
                 }
-                
-                // Update both the color class and the animation class
                 elem.className = `badge badge-sm bg-gradient-${badgeClass} ${bot.status === 'training' ? 'status-badge-training' : ''}`;
                 
                 // Update button states
@@ -264,7 +243,6 @@
                 const actionButtons = row.querySelectorAll('.btn-group .btn');
                 
                 if (bot.status === 'trained') {
-                  // Enable buttons
                   widgetButton.classList.remove('disabled', 'opacity-50');
                   widgetButton.removeAttribute('disabled');
                   actionButtons.forEach(btn => {
@@ -272,7 +250,6 @@
                     btn.removeAttribute('disabled');
                   });
                 } else {
-                  // Disable buttons
                   widgetButton.classList.add('disabled', 'opacity-50');
                   widgetButton.setAttribute('disabled', '');
                   actionButtons.forEach(btn => {
@@ -292,29 +269,84 @@
       .catch(error => console.error("Error updating chatbot status:", error));
   }, 5000);
 
-  function copySnippet(chatbotId) {
+  // Copy snippet function
+  window.copySnippet = function(chatbotId) {
     const snippetElement = document.getElementById(`snippet-${chatbotId}`);
-    const buttonElement = snippetElement.previousElementSibling;
+    const buttonElement = document.getElementById(`widget-code-${chatbotId}`);
     const buttonTextElement = document.getElementById(`button-text-${chatbotId}`);
     
-    // Copy the text
     navigator.clipboard.writeText(snippetElement.textContent.trim())
       .then(() => {
-        // Change button text and style
         buttonTextElement.textContent = 'Copied!';
         buttonElement.classList.add('btn-success');
         buttonElement.classList.remove('btn-outline-primary');
-        
-        // Reset after 2 seconds
         setTimeout(() => {
           buttonTextElement.textContent = 'Widget Code';
           buttonElement.classList.remove('btn-success');
           buttonElement.classList.add('btn-outline-primary');
         }, 2000);
       })
-      .catch(err => {
-        console.error('Failed to copy text: ', err);
-      });
-  }
+      .catch(err => console.error('Failed to copy text:', err));
+  };
+
+  // Status change confirmation using SweetAlert2
+  window.confirmStatusChange = function(chatbotId, currentStatus) {
+    const newStatus = currentStatus.toLowerCase() === 'trained' ? 'inactive' : 'trained';
+    const title = newStatus === 'inactive' ? 'Disable Chatbot?' : 'Enable Chatbot?';
+    const text = newStatus === 'inactive' ? 
+      'Are you sure you want to disable this chatbot?' : 
+      'Are you sure you want to enable this chatbot?';
+    
+    Swal.fire({
+      title: title,
+      text: text,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, proceed!'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        fetch("{% url 'change_chatbot_status' %}", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+          },
+          body: JSON.stringify({
+            chatbot_id: chatbotId,
+            new_status: newStatus
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            Swal.fire(
+              'Success!',
+              `Chatbot has been ${newStatus === 'inactive' ? 'disabled' : 'enabled'}.`,
+              'success'
+            ).then(() => {
+              location.reload();
+            });
+          } else {
+            Swal.fire(
+              'Error!',
+              data.error || 'Failed to change status',
+              'error'
+            );
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          Swal.fire(
+            'Error!',
+            'An error occurred while changing status.',
+            'error'
+          );
+        });
+      }
+    });
+  };
+});
 </script>
 {% endblock %}

@@ -1,0 +1,77 @@
+{% extends 'user_querySafe/include/base.html' %}
+{% block title %}Help & Support | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  {% if messages %}
+  <div class="row mb-4">
+    <div class="col-12">
+      {% for message in messages %}
+      <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% else %}success{% endif %} alert-dismissible text-white fade show" role="alert">
+        <span class="text-sm">
+          {{ message|safe }}
+        </span>
+        <button type="button" class="btn-close text-lg py-3 opacity-10" data-bs-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">×</span>
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="row">
+    <!-- Form Section -->
+    <div class="col-md-8">
+      <div class="card shadow-lg border-0">
+        <!-- Card Header -->
+        <div class="card-header bg-gradient-primary text-white text-center py-3">
+          <h5 class="mb-0">Need Help? Contact Us</h5>
+        </div>
+
+        <!-- Card Body -->
+        <div class="card-body px-4 pb-4">
+          <form method="POST" action="{% url 'help_support' %}">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="name" class="form-label">Your Name</label>
+              <input type="text" class="form-control" id="name" value="{{ user.name }}" readonly>
+            </div>
+            <div class="mb-3">
+              <label for="email" class="form-label">Your Email</label>
+              <input type="email" class="form-control" id="email" value="{{ user.email }}" readonly>
+            </div>
+            <div class="mb-3">
+              <label for="subject" class="form-label">Subject</label>
+              <input type="text" class="form-control" id="subject" name="subject" placeholder="Enter the subject" required>
+            </div>
+            <div class="mb-3">
+              <label for="message" class="form-label">Your Message</label>
+              <textarea class="form-control" id="message" name="message" rows="4" placeholder="Describe your issue or question..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Submit</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contact Info Section -->
+    <div class="col-md-4">
+      <div class="card shadow-lg border-0">
+        <div class="card-header bg-gradient-secondary text-white text-center py-3">
+          <h5 class="mb-0">Contact Information</h5>
+        </div>
+        <div class="card-body px-4 pb-4">
+          <p>If you need immediate assistance, feel free to reach out to us:</p>
+          <ul class="list-unstyled">
+            <li><strong>Email:</strong> support@example.com</li>
+            <li><strong>Phone:</strong> +1 234 567 890</li>
+            <li><strong>Address:</strong> 1234 Metric Vibes Lane, Tech City</li>
+          </ul>
+          <p>Our support team is available Monday to Friday, 9 AM to 5 PM.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

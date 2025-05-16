@@ -1,0 +1,50 @@
+
+--- Page: C6ANSR_PackageSlip_T17456YQ57581D4V41.pdf_page1.png ---
+Here's a breakdown of the image's content, covering text, tables, charts/graphs, and images/diagrams:
+
+**1. Text:**
+
+*   **DELHIVERY** (Logo)
+*   Delhivery Direct
+*   To send items, visit www.delhivery.com/direct
+*   Order Date: 26/04/2025
+*   Product Type
+*   EXPRESS
+*   WAYBILL NUMBER - PREPAID
+*   2827763718722
+*   TO (CONSIGNEE ADDRESS)
+*   Himanshu Kumar, Hostel-2 Room no.- 093, Tolani maritime institute Talegaon, Chakan Road Induri, Talegaon Maharashtra - 410507,
+*   Talegaon Dabhade, maharashtra- 410507.
+*   ITEM DETAILS
+*   Item Description:
+*   Books & Documents - Envelope / Pouch
+*   Declared Weight:
+*   0 - 500gms
+*   Shipping Mode:
+*   EXPRESS
+*   Declared Value:
+*   ₹2000.00
+*   FROM
+*   Dipanshu Saini, Santlal colony, Jaroda Muzaffarnagar, Muzaffarnagar, uttar pradesh, 251003
+*   DISCLAIMER
+*   Personal/Used goods, Not for sale - No commercial value
+*   The shipper hereby declares that he/she accepts the conditions of use as listed on https://www.delhivery.com/direct/app/terms
+
+**2. Tables:**
+
+The image contains what can be interpreted as a simple table structure, though it is not visually formatted as a table. Here's the data represented in a table format:
+
+| Header           | Value                                  | Header           | Value       |
+| ---------------- | -------------------------------------- | ---------------- | ----------- |
+| Item Description | Books & Documents - Envelope / Pouch | Shipping Mode    | EXPRESS     |
+| Declared Weight  | 0 - 500gms                             | Declared Value   | ₹2000.00    |
+
+**3. Charts/Graphs:**
+
+*   There is a **barcode** present in the image. It represents the waybill number 2827763718722.
+
+**4. Images/Diagrams:**
+
+*   **Delhivery Logo:** The image includes the Delhivery company logo.
+*   **Barcode:** A vertical barcode is present. It's a representation of the waybill number in a machine-readable format.
+

@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from .forms import RegisterForm, LoginForm, OTPVerificationForm
-from .models import ActivationCode, Activity, Contact, User, Chatbot, ChatbotDocument, Conversation, Message, EmailOTP, UserPlanAlot, SubscriptionPlan
+from .models import ActivationCode, Activity, Contact, User, Chatbot, ChatbotDocument, Conversation, Message, EmailOTP, UserPlanAlot, SubscriptionPlan, HelpSupportRequest
 from django.http import JsonResponse
 import json
 from django.views.decorators.csrf import csrf_exempt
@@ -302,9 +302,6 @@ def verify_activation_view(request):
             return redirect('login')
     return render(request, 'user_querySafe/verify_account_activate.html')
 
-def index_view(request):
-    return render(request, 'user_querySafe/index.html')
-
 @redirect_authenticated_user
 def login_view(request):
     if request.method == 'POST':
@@ -340,6 +337,7 @@ def login_view(request):
         form = LoginForm()
 
     return render(request, 'user_querySafe/login.html', {'form': form})
+
 
 @login_required
 def dashboard_view(request):
@@ -700,6 +698,10 @@ def update_profile(request):
     return redirect('profile')
 
 
+def index_view(request):
+    return render(request, 'user_querySafe/index.html')
+
+
 def contact_view(request):
     if request.method == 'POST':
         name = request.POST.get('name')
@@ -753,3 +755,36 @@ Message:
 
     return render(request, 'user_querySafe/contact-us.html')
 
+
+@login_required
+def help_support_view(request):
+    user = User.objects.get(user_id=request.session['user_id'])
+
+    if request.method == 'POST':
+        subject = request.POST.get('subject')
+        message = request.POST.get('message')
+
+        if not message.strip() or not subject.strip():
+            messages.error(request, "Subject and message cannot be empty.")
+            return redirect('help_support')
+
+        try:
+            # Save the contact form data to the database
+            HelpSupportRequest.objects.create(
+                user=user,
+                subject=subject,
+                message=message
+            )
+
+            # Success message
+            messages.success(request, "Your message has been sent successfully. Our support team will get back to you soon.")
+        except Exception as e:
+            print(f"Error: {e}")
+            messages.error(request, "There was an error submitting your request. Please try again.")
+
+        return redirect('help_support')
+
+    context = {
+        'user': user,
+    }
+    return render(request, 'user_querySafe/help-support.html', context)

@@ -3,11 +3,14 @@ import random
 import string
 import os
 from django.conf import settings
-# from django.core.files.storage import default_storage
+from django.core.files.storage import FileSystemStorage
 from django.utils.text import get_valid_filename
-from user_querySafe.vectorization.pipeline_processor import run_pipeline_background
+from user_querySafe.chatbot.pipeline_processor import run_pipeline_background
 from django.contrib.auth import get_user_model
 User = get_user_model()
+
+# Create a custom storage that points to BASE_DIR/documents/files_uploaded
+custom_storage = FileSystemStorage(location=os.path.join(settings.BASE_DIR, 'documents', 'files_uploaded'))
 
 class User(models.Model):
     STATUS_CHOICES = (
@@ -78,7 +81,6 @@ class Chatbot(models.Model):
     user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='chatbots')
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
-    description = models.TextField(blank=True)
     status = models.CharField(max_length=20, default='training')
     logo = models.ImageField(
         upload_to='chatbot_logos/',
@@ -109,16 +111,16 @@ class Chatbot(models.Model):
         base_url = getattr(settings, 'WEBSITE_URL')
         
         return f'''<script>
-(function(w,d,s,id){{
-    var js, fjs = d.getElementsByTagName(s)[0];
-    if (d.getElementById(id)){{return;}}
-    js = d.createElement(s);
-    js.id = id;
-    js.src = "{base_url}/widget/{self.chatbot_id}/querySafe.js";
-    js.async = true;
-    fjs.parentNode.insertBefore(js, fjs);
-}}(window, document, 'script', 'querySafe-widget'));
-</script>'''
+        (function(w,d,s,id){{
+            var js, fjs = d.getElementsByTagName(s)[0];
+            if (d.getElementById(id)){{return;}}
+            js = d.createElement(s);
+            js.id = id;
+            js.src = "{base_url}/widget/{self.chatbot_id}/querySafe.js";
+            js.async = true;
+            fjs.parentNode.insertBefore(js, fjs);
+        }}(window, document, 'script', 'querySafe-widget'));
+        </script>'''
 
     @property
     def conversation_count(self):
@@ -128,54 +130,35 @@ class Chatbot(models.Model):
         return self.name
 
 class ChatbotDocument(models.Model):
-    chatbot = models.ForeignKey(Chatbot, on_delete=models.CASCADE)
-    document = models.FileField(upload_to='documents/files_uploaded/')
+    chatbot = models.ForeignKey('Chatbot', on_delete=models.CASCADE)
+    # Use custom_storage so that files are saved in BASE_DIR/documents/files_uploaded
+    document = models.FileField(upload_to='', storage=custom_storage)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        if hasattr(self.document, 'name'):
-            return str(self.document.name)
-        return "No document"
+        return str(self.document.name) if hasattr(self.document, 'name') else "No document"
 
     def save(self, *args, **kwargs):
-        is_new = not self.pk and hasattr(self, 'pdf_file')
-        if is_new:  # Check if it's a new instance and pdf_file exists
-            pdf_file = self.pdf_file
+        # If new and file is uploaded, rename the file before saving
+        if not self.pk and self.document:
+            pdf_file = self.document
             chatbot_id = self.chatbot.chatbot_id
             original_filename = get_valid_filename(pdf_file.name)
             file_extension = os.path.splitext(original_filename)[1]
-    
+
             # Truncate the original filename if it's too long
-            max_filename_length = 200  # Adjust as needed
+            max_filename_length = 200
             if len(original_filename) > max_filename_length:
                 original_filename = original_filename[:max_filename_length - len(file_extension)]
 
             filename = f"{chatbot_id}_{original_filename}{file_extension}"
-            
-            upload_path = os.path.join('documents', 'files_uploaded', filename)
-            full_path = os.path.join(settings.BASE_DIR, upload_path)
-
-            # Ensure the directory exists
-            os.makedirs(os.path.dirname(full_path), exist_ok=True)
-
-            # Save the file
-            with open(full_path, 'wb+') as destination:
-                for chunk in pdf_file.chunks():
-                    destination.write(chunk)
-
-            self.document = upload_path  # Store the file path
+            # Save file using custom storage (this writes to BASE_DIR/documents/files_uploaded)
+            saved_name = self.document.storage.save(filename, pdf_file)
+            self.document.name = saved_name
             print(f"✅ File uploaded: {filename}")
-        super().save(*args, **kwargs)
-        
-        # Start the pipeline in a single background thread
-        # if is_new:
-        #     threading.Thread(
-        #         target=process_chatbot_pipeline,
-        #         args=(self.chatbot.chatbot_id,),
-        #         daemon=True
-        #     ).start()
-        run_pipeline_background(self.chatbot.chatbot_id)
 
+        super().save(*args, **kwargs)
+        run_pipeline_background(self.chatbot.chatbot_id)
 
 class Conversation(models.Model):
     conversation_id = models.CharField(max_length=10, unique=True, editable=False)
@@ -206,46 +189,6 @@ class Message(models.Model):
     class Meta:
         ordering = ['timestamp']
 
-def process_chatbot_pipeline(chatbot_id):
-    # 1. PDF to Images
-    pdf_dir = os.path.join("documents", "files_uploaded")
-    img_dir = os.path.join("documents", "files_images")
-    pdf_files = [f for f in os.listdir(pdf_dir) if f.startswith(chatbot_id + "_") and f.lower().endswith(".pdf")]
-    for pdf_file in pdf_files:
-        # Convert PDF to images
-        pdf_path = os.path.join(pdf_dir, pdf_file)
-        print(f"Converting {pdf_file} to images...")
-        # (Call your PDF-to-image function here, e.g., convert_pdf_to_images(pdf_path, img_dir))
-        print(f"PDF {pdf_file} converted to images successfully.")
-    print("All PDFs converted to images.")
-
-    # 2. Images to Captions
-    img_files = [f for f in os.listdir(img_dir) if f.startswith(chatbot_id + "_") and f.lower().endswith(".png")]
-    # Group images by PDF base name
-    from collections import defaultdict
-    pdf_images = defaultdict(list)
-    for img_file in img_files:
-        base = "_".join(img_file.split("_")[:-1])
-        pdf_images[base].append(img_file)
-    for base, images in pdf_images.items():
-        print(f"Generating captions for {base}...")
-        # (Call your image-to-caption function here, e.g., process_images_to_text(chatbot_id, images))
-        print(f"Captions generated for {base}.")
-    print("All images captioned.")
-
-    # 3. Caption to Chunk
-    caption_dir = os.path.join("documents", "files_captions")
-    caption_files = [f for f in os.listdir(caption_dir) if f.startswith(chatbot_id + "_") and f.endswith(".txt")]
-    for caption_file in caption_files:
-        print(f"Chunking {caption_file}...")
-        # (Call your chunking function here, e.g., chunk_text_file(input_path, output_path))
-        print(f"Chunked {caption_file}.")
-    print("All caption files chunked.")
-
-    # 4. Merge and Embed
-    print("Merging all chunks and embedding...")
-    # (Call your embedding function here, e.g., process_all_chunk_files(chatbot_id))
-    print(f"All chunks merged and embedded for chatbot {chatbot_id}.")
 
 class Activity(models.Model):
     ACTIVITY_TYPES = (
@@ -349,3 +292,12 @@ class UserPlanAlot(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.plan_name}"
+
+class HelpSupportRequest(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="help_requests")
+    subject = models.CharField(max_length=255)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.name} - {self.subject}"

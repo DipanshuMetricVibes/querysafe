@@ -1,0 +1,142 @@
+
+--- Page: Y48C20_Ganesh-CodeByGs-CV_dkRICwy.pdf_page1.png ---
+Here's a breakdown of the image content:
+
+**1. Text:**
+
+*   **Name:** Ganeshan Sudhakar
+*   **Contact Information:**
+    *   Mobile: +91-99656 10028
+    *   Email: ganeshansudhakar01@gmail.com
+    *   LinkedIn: linkedin.com/in/ganeshansudhakar
+*   **Section Titles:**
+    *   Professional Summery
+    *   Technical Skills and Tools
+*   **Professional Summary Points:**
+    *   4+ years of experience as a Python Developer, specializing in backend development, automation, and data processing.
+    *   Proficient in Python, Django, Flask, FastAPI, and cloud technologies like AWS.
+    *   Strong knowledge of Data Structures and Algorithms (DSA) for optimized problem-solving.
+    *   Experienced in designing RESTful APIs and integrating third-party services.
+    *   Passionate about writing clean, efficient, and scalable code with a focus on software design patterns and best practices.
+    *   Hands-on experience in SQL (MySQL, PostgreSQL) & NoSQL (MongoDB) databases.
+    *   Strong debugging, problem-solving, and analytical skills.
+
+**2. Table:**
+
+| Category         | Skills/Tools                                 |
+| ---------------- | -------------------------------------------- |
+| Languages:       | Python, SQL, JavaScript                      |
+| Web Frameworks:  | Django, Flask, FastAPI                        |
+| Databases:       | MySQL, PostgreSQL, MongoDB                   |
+| Cloud & DevOps: | AWS (EC2, S3, Lambda), Docker, Kubernetes |
+| Version Control:  | Git, GitHub, Bitbucket                       |
+| Testing Tools:   | PyTest, Selenium                             |
+| Others:          | REST APIs, OAuth 2.0, JWT, WebSockets       |
+
+**3. Overall Description:**
+
+The image appears to be a part of a resume or professional profile. It presents the individual's name, contact information, a brief professional summary, and a table of technical skills and tools.
+
+
+--- Page: Y48C20_Ganesh-CodeByGs-CV_dkRICwy.pdf_page2.png ---
+Here's a breakdown of the elements in the image:
+
+**1. Text:**
+
+*   **Professional Experience**
+*   **Founder & Lead Developer – Thinking AI (2021 – Present)**
+*   "Designed and developed AI-driven applications and automation tools."
+*   "Built and deployed scalable web applications using Python, Django, and AWS."
+*   "Led the development of a personalized AI system that adapts to user behavior."
+*   "Managed end-to-end project development, including full-stack development and cloud deployment."
+*   "Integrated REST APIs, WebSockets, and third-party services like OpenAI API, Google API, and payment gateways."
+*   "Worked on optimizing ML models, data pipelines, and backend services for better performance."
+*   "Website: thinkingai.in | GitHub: github.com/yourgithub"
+*   "Product Demo: thinkingai.in | LinkedIn Proofs: linkedin.com/in/ganeshansudhakar"
+*   "Instagram Marketing: instagram.com/thinkingai | AWS Projects: Available on request"
+*   "Zland India"
+*   "Organization account"
+*   "Account ID: 5711150862584319906"
+*   "Filter by"
+*   "All"
+*   "Search by app or package name"
+*   "App"
+*   "Installed audience"
+*   "App status"
+*   "Update status"
+*   "Last updated"
+*   "ThinkingAI"
+*   "com.ambalooms.ThinkingAI"
+*   "Removed by Google"
+*   "App rejected"
+*   "Aug 11, 2024"
+*   "ThinkingAI"
+*   "com.thinkingapp"
+*   "Zland India"
+*   "com.ambalooms.Zland"
+*   "Show rows: 10"
+*   "1-3 of 3"
+
+**2. Tables:**
+
+| App                        | Installed audience | App status      | Update status | Last updated |
+| :------------------------- | :----------------- | :-------------- | :------------ | :----------- |
+| ThinkingAI com.ambalooms.ThinkingAI | 0                  | Removed by Google | App rejected  | Aug 11, 2024 |
+| ThinkingAI com.thinkingapp         | 0                  | Removed by Google | App rejected  | Aug 11, 2024 |
+| Zland India com.ambalooms.Zland     | 41                 | Removed by Google |               | Dec 18, 2023 |
+
+**3. Images/Diagrams:**
+
+*   There's a small icon beside "Zland India" that looks like a building with a download symbol within.
+*   There are icons beside each app name (ThinkingAI and Zland India). They are logos.
+*   A red exclamation mark icon indicates "App Rejected".
+*   There's a bell icon.
+*   Arrow icons indicate the ability to navigate.
+*   There are icons for navigating table pages.
+
+**4. Insights and Data:**
+
+*   The first part of the image is a resume section outlining the professional experience of an individual as "Founder & Lead Developer" at "Thinking AI" from 2021 to the present. It lists accomplishments and technologies used, followed by links to their online presence.
+*   The table shows data for three apps: two versions of "ThinkingAI" and "Zland India".
+*   Both versions of "ThinkingAI" have 0 installed audience and were removed by Google on Aug 11, 2024. Both were "App Rejected".
+*   "Zland India" has an installed audience of 41 and was removed by Google on Dec 18, 2023.
+*   The "Filter by" section allows the user to filter the displayed data.
+*   The table allows the user to select how many rows to show.
+
+
+--- Page: Y48C20_Ganesh-CodeByGs-CV_dkRICwy.pdf_page3.png ---
+Here is a breakdown of the image content:
+
+**1. Text:**
+The image contains the following text:
+
+*   **Projects**
+*   Full-Stack Development: Built using Python (Django, FastAPI, Flask) for the backend and React.js, Next.js for the frontend.
+*   AI & Machine Learning: Integrated OpenAI API, PyTorch-based models, and a personalized recommendation engine.
+*   Cloud & DevOps: Deployed on AWS (EC2, S3, RDS, Lambda, CloudFront) with Docker, Kubernetes, and CI/CD pipelines.
+*   API & Integrations: Developed RESTful APIs with OAuth 2.0, JWT authentication, WebSockets, and third-party services (Google, WhatsApp, Stripe).
+*   Marketing & Growth: Executed SEO strategies, LinkedIn & Instagram marketing, and automated outreach via Python scripts.
+*   **Education**
+*   Bachelor of Technology (B.Tech) in \[Biotechnology]
+*   Bannari Amman Institute of Technology, \[2016-2020]
+*   **Soft Skills**
+*   Problem-solving & analytical thinking
+*   Team collaboration & leadership
+*   Strong communication & documentation
+*   **Languages**
+*   English
+*   Tamil
+
+**2. Tables:**
+There are no tables in this image.
+
+**3. Charts/Graphs:**
+There are no charts or graphs in this image.
+
+**4. Images/Diagrams:**
+There are no images or diagrams in this image.
+
+**Overall Description:**
+
+The image appears to be a portion of a resume or CV. It showcases sections for "Projects", "Education", "Soft Skills", and "Languages". Under each section, bullet points provide specific details and examples of skills and experiences.
+

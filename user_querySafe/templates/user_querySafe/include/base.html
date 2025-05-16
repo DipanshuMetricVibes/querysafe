@@ -212,7 +212,37 @@
 
           <!-- fetching page conntent here -->
           {% block content %}
-
+          {% if show_toaster %}
+          <script>
+            document.addEventListener('DOMContentLoaded', function() {
+              {% if messages %}
+                {% for message in messages %}
+                  showToast(
+                    '{% if message.tags == "success" %}success{% else %}error{% endif %}',
+                    '{{ message|escapejs }}'
+                  );
+                {% endfor %}
+              {% endif %}
+            });
+          </script>
+          {% else %}
+          {% if messages %}
+          <div class="row mb-4">
+            <div class="col-12">
+              {% for message in messages %}
+              <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% else %}success{% endif %} alert-dismissible text-white fade show" role="alert">
+                <span class="text-sm">
+                  {{ message|safe }}
+                </span>
+                <button type="button" class="btn-close text-lg py-3 opacity-10" data-bs-dismiss="alert" aria-label="Close">
+                  <span aria-hidden="true">×</span>
+                </button>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+          {% endif %}
           {% endblock %}
         </div>
         {% include 'user_querySafe/include/footer.html' %}
